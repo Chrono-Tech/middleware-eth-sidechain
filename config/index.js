@@ -1,7 +1,7 @@
 /**
  * Copyright 2017–2018, LaborX PTY
  * Licensed under the AGPL Version 3 license.
- * @author Egor Zuev <zyev.egor@gmail.com>
+ * @author Kirill Sergeev <cloudkserg11@gmail.com>
  */
 
 /**
@@ -16,8 +16,14 @@ const path = require('path'),
   EthCrypto = require('eth-crypto'),
   contract = require('truffle-contract'),
   requireAll = require('require-all'),
-  sidechainContracts = requireAll({
-    dirname: path.resolve(__dirname, '../../SidechainAtomicSwap/build/contracts'),
+  sidechainContracts = requireAll({ //scan dir for all smartContracts, excluding emitters (except ChronoBankPlatformEmitter) and interfaces
+    dirname: process.env.SMART_ATOMIC_CONTRACTS_PATH || path.join(__dirname, '../node_modules/chronobank-smart-contracts-atomic-swap/build/contracts'),
+    filter: /(^((ChronoBankPlatformEmitter)|(?!(Emitter|Interface)).)*)\.json$/,
+    resolve: Contract => contract(Contract)
+  }),
+  contracts = requireAll({ //scan dir for all smartContracts, excluding emitters (except ChronoBankPlatformEmitter) and interfaces
+    dirname: process.env.SMART_CONTRACTS_PATH || path.join(__dirname, '../node_modules/chronobank-smart-contracts/build/contracts'),
+    filter: /(^((ChronoBankPlatformEmitter)|(?!(Emitter|Interface)).)*)\.json$/,
     resolve: Contract => contract(Contract)
   }),
   mongoose = require('mongoose');
@@ -50,7 +56,8 @@ let config = {
       connections: {
         primary: mongoose
       },
-      contracts: sidechainContracts,
+      sidechainContracts,
+      contracts,
       libs: {
         web3: web3,
         uniqid: uniqid,
@@ -67,7 +74,8 @@ let config = {
           serviceName: process.env.RABBIT_SERVICE_NAME || 'sdk'
         },
         sidechain: {
-          uri: 'http://localhost:8545',
+          uri: `${/^win/.test(process.platform) ? '\\\\.\\pipe\\' : ''}${process.env.WEB3_URI || `/tmp/${(process.env.NETWORK || 'development')}/geth.ipc`}`,
+          //uri: 'http://localhost:8545',
           addresses: {
             owner: '0x30e8dc8fb374f297d330aa1ed3ad55eed22782cf',
             middleware: '0xec723c98b4cff7383fd9dca22f2a9aafe174c600'
