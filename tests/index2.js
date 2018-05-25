@@ -30,6 +30,20 @@ let web3,
   sidechainWeb3,
   channel;
 
+const getMainnetBalance = async (timeAddress, userAddress) {
+    contracts.ERC20Interface.setProvider(web3.currentProvider); 
+    return await contracts.ERC20Interface.at(timeAddress).balanceOf(userAddress);
+}
+
+const getSidechainBalance = async(timeAddress, userAddress) {
+    sidechainContracts.ChronoBankPlatform.setProvider(sidechainWeb3.currentProvider);
+    const platform = await sidechainContracts.ChronoBankPlatform.deployed();
+    const tokenAddress = await platform.proxies(symbol);
+
+    contracts.ERC20Interface.setProvider(sidechainWeb3.currentProvider); 
+    return await contracts.ERC20Interface.at(timeAddress).balanceOf(userAddress);
+}
+
 describe('core/eth-sidechain', function () { //todo add integration tests for query, push tx, history and erc20tokens
 
   before(async () => {
@@ -59,16 +73,20 @@ describe('core/eth-sidechain', function () { //todo add integration tests for qu
   });
 
 
+
   it('check from mainnet to sidechain', async () => {
-      const privateKey = 'b7616111ee3c709ff907777d25b863d15109494a240d39c4f0b51fdb5245e99b';
+
+    
+
+    const privateKey = 'b7616111ee3c709ff907777d25b863d15109494a240d39c4f0b51fdb5245e99b';
     const userWallet = Wallet.fromPrivateKey(Buffer.from(privateKey, 'hex'));
     const userAddress = `0x${userWallet.getAddress().toString('hex')}`;
     const userPubKey = userWallet.getPublicKey().toString('hex');
 
     contracts.ERC20Manager.setProvider(web3.currentProvider); 
-    contracts.ERC20Interface.setProvider(web3.currentProvider); 
     contracts.TimeHolder.setProvider(web3.currentProvider); 
     contracts.TimeHolderWallet.setProvider(web3.currentProvider); 
+    contracts.ERC20Interface.setProvider(web3.currentProvider); 
     sidechainContracts.AtomicSwapERC20.setProvider(sidechainWeb3.currentProvider); //8546
     
     const  erc20Manager = await contracts.ERC20Manager.deployed();
@@ -114,10 +132,15 @@ describe('core/eth-sidechain', function () { //todo add integration tests for qu
     expect(response).to.not.emtpy;
 
     const newBalance = await contracts.ERC20Interface.at(timeAddress).balanceOf(userAddress);
-    console.log(newBalance.minus(initBalance).lessThan(1000));
+    console.log('newBalance on mainnet', initBalance, newBalance);
+    expect(newBalance.minus(initBalance).lessThan(1000));
 
     
-    contracts.ERC20Interface.setProvider(sidechainWeb3.currentProvider); 
+    sidechainContracts.ERC20Interface.setProvider(sidechainWeb3.currentProvider); 
+    const newSidechainBalance = await contracts.ERC20Interface.at(timeAddress).balanceOf(userAddress);
+    console.log('newBalance on sidechain', newSidechainBalance);
+    expect(newSidechainBalance
+
 
   });
 
