@@ -5,7 +5,6 @@
   "dependencies": {
     "bunyan": "^1.8.12",
     "chronobank-smart-contracts": "git+https://github.com/ChronoBank/SmartContracts.git#develop",
-    "chronobank-smart-contracts-atomic-swap": "git+https://github.com/alesanro/SidechainAtomicSwap.git#master",
     "dotenv": "^4.0.0",
     "eth-crypto": "^1.0.0",
     "lodash": "^4.17.4",
@@ -34,6 +33,7 @@
     "eslint": "^4.6.1",
     "eslint-plugin-chronobank": "github:chronobank/eslint-plugin-chronobank",
     "ethereumjs-wallet": "^0.6.0",
+    "chronobank-smart-contracts-atomic-swap": "git+https://github.com/ChronoBank/LXsidechain-sc.git#develop",
     "mocha": "^3.5.0",
     "request": "^2.85.0",
     "request-promise": "^4.2.2",

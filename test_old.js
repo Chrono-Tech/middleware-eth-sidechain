@@ -43,7 +43,9 @@ describe('core/eth-sidechain', function () { //todo add integration tests for qu
       channel = await amqpInstance.createChannel();
     }
 
-    web3 = new Web3.providers.IpcProvider(config.nodered.functionGlobalContext.settings.sidechain.uri);
+    const sidechainProvider = new Web3.providers.HttpProvider(config.nodered.functionGlobalContext.settings.sidechain.uri);
+    web3 = new Web3();
+    web3.setProvider(sidechainProvider);
     sidechainContracts.AtomicSwapERC20.setProvider(web3.currentProvider);
     contracts.TimeHolder.setProvider(web3.currentProvider);
   });
