@@ -61,7 +61,7 @@ NODERED_AUTO_SYNC_MIGRATIONS=true
 ```
 
 The options are presented below:
-| name | description|
+| name | description |
 | ------ | ------ |
 | MONGO_URI   | the URI string for mongo connection(mainnet)
 | MONGO_COLLECTION_PREFIX   | the default prefix for all mongo collections(mainnet). The default value is 'eth'
