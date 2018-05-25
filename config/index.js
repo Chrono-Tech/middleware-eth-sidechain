@@ -42,17 +42,29 @@ const path = require('path'),
       uri: process.env.MONGO_DATA_URI || process.env.MONGO_URI || 'mongodb://localhost:27017/data',
       collectionPrefix: process.env.MONGO_DATA_COLLECTION_PREFIX || process.env.MONGO_COLLECTION_PREFIX || 'eth',
     }
+  },
+  sidechainMongo = {
+    accounts: {
+      uri: process.env.SIDECHAIN_MONGO_ACCOUNTS_URI || process.env.SIDECHAIN_MONGO_URI || 'mongodb://localhost:27017/data',
+      collectionPrefix: process.env.SIDECHAIN_MONGO_ACCOUNTS_COLLECTION_PREFIX || process.env.SIDECHAIN_MONGO_COLLECTION_PREFIX || 'eth'
+    },
+    data: {
+      uri: process.env.SIDECHAIN_MONGO_DATA_URI || process.env.SIDECHAIN_MONGO_URI || 'mongodb://localhost:27017/data',
+      collectionPrefix: process.env.SIDECHAIN_MONGO_DATA_COLLECTION_PREFIX || process.env.SIDECHAIN_MONGO_COLLECTION_PREFIX || 'eth',
+    }
   };
 
 
 let config = {
   mongo,
+  sidechainMongo,
   rest: {
     domain: process.env.DOMAIN || 'localhost',
     port: parseInt(process.env.REST_PORT) || 8081
   },
   nodered: {
     mongo: mongo.data,
+    sidechainMongo: sidechainMongo.data,
     httpServer: parseInt(process.env.USE_HTTP_SERVER) || false,
     autoSyncMigrations: process.env.NODERED_AUTO_SYNC_MIGRATIONS || true,
     customNodesDir: [path.join(__dirname, '../')],
@@ -71,10 +83,11 @@ let config = {
       },
       settings: {
         mongo,
+        sidechainMongo,
         rabbit,
         sidechainRabbit,
         sidechain: {
-          uri: `${/^win/.test(process.platform) ? '\\\\.\\pipe\\' : ''}${process.env.WEB3_SIDECHAIN_URI || `/tmp/${(process.env.NETWORK || 'development')}/geth.ipc`}`,
+          uri: `${/^win/.test(process.platform) ? '\\\\.\\pipe\\' : ''}${process.env.WEB3_SIDECHAIN_URI || `/tmp/${(process.env.SIDECHAIN_NETWORK || 'development')}/geth.ipc`}`,
           symbol: 'TIME',
           addresses: {
             owner: '0x30e8dc8fb374f297d330aa1ed3ad55eed22782cf',
