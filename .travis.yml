@@ -1,0 +1,67 @@
+sudo: required
+dist: trusty
+os: linux
+group: stable
+language: node_js
+node_js: 7.6.0
+
+services:
+  - mongodb
+  - rabbitmq
+
+before_install:
+  - mongo data --eval 'db.dropDatabase();'
+  - sudo apt-get update
+  - sudo apt-get install python2.7 git-all pkg-config libncurses5-dev libssl-dev libnss3-dev libexpat-dev libc6-dev -y
+
+
+install:
+  - sudo rabbitmq-plugins enable rabbitmq_web_stomp
+  - npm install
+  - npm install -g pm2
+
+before_script:
+    - echo "USE_HTTP_SERVER=1" > .env
+    - cd $TRAVIS_BUILD_DIR/node_modules/middleware_eth.blockProcessor && npm install
+    - cd $TRAVIS_BUILD_DIR/node_modules/middleware_eth.blockProcessor && pm2 start ipcConverter.js
+    - sleep 30 && cd $TRAVIS_BUILD_DIR/node_modules/middleware_eth.blockProcessor && pm2 start index.js
+    - rm -r $TRAVIS_BUILD_DIR/node_modules/chronobank-smart-contracts/build
+    - sleep 30 && cd $TRAVIS_BUILD_DIR && npm run deploy:contracts
+    - rm -r  $TRAVIS_BUILD_DIR/node_modules/chronobank-smart-contracts-atomic-swap/build
+    - sleep 30 && cd $TRAVIS_BUILD_DIR && npm run deploy:swap_contracts
+    - cd $TRAVIS_BUILD_DIR && pm2 start index.js
+
+script:
+  - sleep 60 && npm test -- --coverage
+
+after_script:
+  - pm2 logs --nostream
+  - pm2 kill && pkill PM2
+
+after_success:
+  - FULL_GCR_KEY="-----BEGIN PRIVATE KEY-----\n"$GCR_KEY"\n-----END PRIVATE KEY-----\n"
+  - sed -i -e "s%\PWD%$FULL_GCR_KEY%g" gcregistry.json
+  - docker login -u _json_key -p "$(cat gcregistry.json)" https://gcr.io
+  - rm -rf gcregistry.json
+  - |
+    if [ "$TRAVIS_TAG" == "" ]; then
+      IMAGE_TAG_NAME="latest"
+    elif [ "$TRAVIS_TAG" != "" ]; then
+      IMAGE_TAG_NAME="develop"
+    fi;
+  - IMAGE_TAG_NAME="latest"
+  - |
+    if [ "$TRAVIS_BRANCH" == "master" ]; then
+      travis_wait 30 docker build -t gcr.io/deep-wares-144610/$TRAVIS_BRANCH/middleware-ethereum:$IMAGE_TAG_NAME --build-arg RELEASE=latest --build-arg GITHUB_API_KEY=$GITHUB_API_KEY .
+      docker push gcr.io/deep-wares-144610/$TRAVIS_BRANCH/middleware-ethereum:$IMAGE_TAG_NAME
+    elif [ "$TRAVIS_BRANCH" == "develop" ]; then
+      travis_wait 30 docker build -t gcr.io/deep-wares-144610/$TRAVIS_BRANCH/middleware-ethereum:$IMAGE_TAG_NAME --build-arg RELEASE=develop --build-arg GITHUB_API_KEY=$GITHUB_API_KEY .
+      docker push gcr.io/deep-wares-144610/$TRAVIS_BRANCH/middleware-ethereum:$IMAGE_TAG_NAME
+    fi;
+
+notifications:
+  email: false
+
+cache:
+  directories:
+    - node_modules
