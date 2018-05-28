@@ -1,0 +1,42 @@
+{
+  "name": "middleware_service",
+  "version": "1.0.0",
+  "main": "index.js",
+  "dependencies": {
+    "bunyan": "^1.8.12",
+    "chronobank-smart-contracts": "git+https://github.com/ChronoBank/SmartContracts.git#develop",
+    "dotenv": "^4.0.0",
+    "eth-crypto": "^1.0.0",
+    "lodash": "^4.17.4",
+    "middleware_service.sdk": "github:chronobank/middleware-service-sdk",
+    "mongoose": "^4.11.11",
+    "mongoose-long": "^0.1.1",
+    "net": "^1.0.2",
+    "require-all": "^2.2.0",
+    "truffle-contract": "^3.0.4",
+    "uniqid": "^4.1.1",
+    "web3": "^0.20.0"
+  },
+  "scripts": {
+    "lint": "node ./node_modules/eslint/bin/eslint.js -c .eslintrc.js --ext .js --fix --ignore-path .eslintignore .",
+    "deploy:swap_contracts": "cd ./node_modules/chronobank-smart-contracts-atomic-swap && npm i &&  node --max_old_space_size=8000 ./node_modules/truffle/build/cli.bundled.js migrate",
+    "deploy:contracts": "cd ./node_modules/chronobank-smart-contracts && npm i &&  node --max_old_space_size=8000 ./node_modules/truffle/build/cli.bundled.js migrate",
+    "test": "node ./node_modules/mocha/bin/mocha -t 90000 tests",
+    "migrate_red": "node ./node_modules/middleware_service.sdk/migrate.js run"
+  },
+  "author": "chronobank",
+  "license": "AGPL-3.0",
+  "description": "",
+  "devDependencies": {
+    "babel-eslint": "^8.0.2",
+    "chai": "^4.1.1",
+    "eslint": "^4.6.1",
+    "eslint-plugin-chronobank": "github:chronobank/eslint-plugin-chronobank",
+    "ethereumjs-wallet": "^0.6.0",
+    "chronobank-smart-contracts-atomic-swap": "git+https://github.com/ChronoBank/LXsidechain-sc.git#develop",
+    "mocha": "^3.5.0",
+    "request": "^2.85.0",
+    "request-promise": "^4.2.2",
+    "sha256": "^0.2.0"
+  }
+}
