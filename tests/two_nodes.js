@@ -15,14 +15,15 @@ process.env.USE_MONGO_DATA = 1;
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 
 mongoose.Promise = Promise;
-mongoose.accounts = mongoose.createConnection(config.mongo.accounts.uri);
-mongoose.data = mongoose.createConnection(config.mongo.data.uri);
+mongoose.mainnet = mongoose.createConnection(config.mongo.uri);
+mongoose.sidechain = mongoose.createConnection(config.sidechainMongo.uri);
 
 const Web3 = require('web3'),
   request = require('request-promise'),
   expect = require('chai').expect,
   amqp = require('amqplib'),
-  exchangeModel = require('../models/exchangeModel');
+  exchangeModel = require('../models/exchangeModel'),
+  sidechainExchangeModel = require('../models/sidechainExchangeModel');
 
 let web3, 
   contracts = config.nodered.functionGlobalContext.contracts,
@@ -34,6 +35,7 @@ describe('core/eth-sidechain', function () { //todo add integration tests for qu
 
   before(async () => {
     await exchangeModel.remove();
+    await sidechainExchangeModel.remove();
 
     let amqpInstance = await amqp.connect(config.nodered.functionGlobalContext.settings.rabbit.url);
     channel = await amqpInstance.createChannel();
@@ -44,7 +46,7 @@ describe('core/eth-sidechain', function () { //todo add integration tests for qu
       channel = await amqpInstance.createChannel();
     }
 
-    const sidechainProvider = config.nodered.functionGlobalContext.settings.mainnet.provider;
+    const sidechainProvider = config.nodered.functionGlobalContext.settings.sidechain.provider;
     sidechainWeb3 = new Web3();
     sidechainWeb3.setProvider(sidechainProvider);
 
@@ -129,9 +131,7 @@ sidechainContracts.ChronoBankPlatform.setProvider(sidechainWeb3.currentProvider)
     // console.log('rrr', response);
     expect(response).to.not.empty;
 
-    const newBalance = await contracts.ERC20Interface.at(timeAddress).balanceOf(userAddress);
-    console.log('newBalance on mainnet', newBalance.toNumber());
-    expect(newBalance.minus(initBalance).lessThan(1000));
+
 
     
     sidechainContracts.ERC20.setProvider(sidechainWeb3.currentProvider); 
@@ -155,8 +155,8 @@ sidechainContracts.ChronoBankPlatform.setProvider(sidechainWeb3.currentProvider)
     let erc20Manager = await contracts.ERC20Manager.deployed();
     const timeAddress = await erc20Manager.getTokenAddressBySymbol("TIME");
     //8546 
-      newBalance = await contracts.ERC20Interface.at(timeAddress).balanceOf(userAddress);
-        console.log('oldBalance on mainnet', newBalance.toNumber());
+    const initBalance = await contracts.ERC20Interface.at(timeAddress).balanceOf(userAddress);
+    console.log('oldBalance on mainnet', newBalance.toNumber());
    
     sidechainContracts.ChronoBankPlatform.setProvider(sidechainWeb3.currentProvider);
     const platform = await sidechainContracts.ChronoBankPlatform.deployed();//8546
@@ -190,10 +190,11 @@ sidechainContracts.ChronoBankPlatform.setProvider(sidechainWeb3.currentProvider)
     contracts.TimeHolder.setProvider(web3.currentProvider);
     const timeHolder = await contracts.TimeHolder.deployed();
     const response = await timeHolder.unlockShares(swapid, key, {from: userAddress, gas: 5700000});
-        // newBalance = await contracts.ERC20Interface.at(timeAddress).balanceOf(userAddress);
-    //8546 
-        // newBalance = await contracts.ERC20Interface.at(timeAddress).balanceOf(userAddress);
-        // console.log('newBalance on mainnet', newBalance.toNumber());
+
+
+    const newBalance = await contracts.ERC20Interface.at(timeAddress).balanceOf(userAddress);
+    console.log('newBalance on mainnet', newBalance.toNumber());
+    expect(newBalance.minus(initBalance).lessThan(1000));
    
   });
 

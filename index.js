@@ -20,10 +20,10 @@ const config = require('./config'),
   redInitter = require('middleware_service.sdk').init;
 
 mongoose.Promise = Promise;
-mongoose.accounts = mongoose.createConnection(config.mongo.accounts.uri);
-mongoose.data = mongoose.createConnection(config.mongo.data.uri);
+mongoose.mainnet = mongoose.createConnection(config.mongo.uri);
+mongoose.sidechain = mongoose.createConnection(config.sidechainMongo.uri);
 
-[mongoose.accounts, mongoose.data].forEach(instance =>
+[mongoose.sidechain, mongoose.mainnet].forEach(instance =>
   instance.on('disconnected', function () {
     log.error('mongo disconnected!');
     process.exit(0);

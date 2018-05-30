@@ -27,29 +27,19 @@ const path = require('path'),
   mongoose = require('mongoose'),
   rabbit = {
     url: process.env.RABBIT_URI || 'amqp://localhost:5672',
-    serviceName: process.env.RABBIT_SERVICE_NAME || 'app_eth'
+    serviceName: process.env.RABBIT_SERVICE_NAME || 'app_eth_mainnet'
   },
   sidechainRabbit = {
     url: process.env.SIDECHAIN_RABBIT_URI || 'amqp://localhost:5672',
     serviceName: process.env.SIDECHAIN_RABBIT_SERVICE_NAME || 'app_eth_sidechain'
   },
   mongo = {
-    accounts: {
-      uri: process.env.MONGO_ACCOUNTS_URI || process.env.MONGO_URI || 'mongodb://localhost:27017/data',
-      collectionPrefix: process.env.MONGO_ACCOUNTS_COLLECTION_PREFIX || process.env.MONGO_COLLECTION_PREFIX || 'eth'
-    },
-    data: {
-      uri: process.env.MONGO_DATA_URI || process.env.MONGO_URI || 'mongodb://localhost:27017/data',
-      collectionPrefix: process.env.MONGO_DATA_COLLECTION_PREFIX || process.env.MONGO_COLLECTION_PREFIX || 'eth',
-    }
+    uri: process.env.MONGO_URI || 'mongodb://localhost:27017/data',
+    collectionPrefix: process.env.MONGO_COLLECTION_PREFIX || 'eth_mainnet',
   },
   sidechainMongo = {
-    accounts: {
-      collectionPrefix: process.env.SIDECHAIN_MONGO_ACCOUNTS_COLLECTION_PREFIX || process.env.SIDECHAIN_MONGO_COLLECTION_PREFIX || 'eth'
-    },
-    data: {
-      collectionPrefix: process.env.SIDECHAIN_MONGO_DATA_COLLECTION_PREFIX || process.env.SIDECHAIN_MONGO_COLLECTION_PREFIX || 'eth',
-    }
+    uri: process.env.SIDECHAIN_MONGO_URI || 'mongodb://localhost:27017/data',
+    collectionPrefix: process.env.SIDECHAIN_MONGO_COLLECTION_PREFIX || 'eth_sidechain',
   },
   WalletProvider = require('../services/WallerProvider'),
   sidechainWeb3 = {
@@ -69,7 +59,7 @@ const path = require('path'),
     }
   };
 
-const mainetWallet = require('ethereumjs-wallet').fromPrivateKey(Buffer.from(mainnetWeb3.oracleKey, 'hex'));
+const mainnetWallet = require('ethereumjs-wallet').fromPrivateKey(Buffer.from(mainnetWeb3.oracleKey, 'hex'));
 const sidechainWallet = require('ethereumjs-wallet').fromPrivateKey(Buffer.from(sidechainWeb3.oracleKey, 'hex'));
 
 let config = {
@@ -80,8 +70,6 @@ let config = {
     port: parseInt(process.env.REST_PORT) || 8081
   },
   nodered: {
-    mongo: mongo.data,
-    sidechainMongo: sidechainMongo.data,
     httpServer: parseInt(process.env.USE_HTTP_SERVER) || false,
     autoSyncMigrations: process.env.NODERED_AUTO_SYNC_MIGRATIONS || true,
     customNodesDir: [path.join(__dirname, '../')],

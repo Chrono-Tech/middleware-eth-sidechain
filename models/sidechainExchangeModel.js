@@ -20,16 +20,24 @@ require('mongoose-long')(mongoose);
  * @param  {Object} obj Describes account's model
  * @return {Object} Model's object
  */
-const Account = new mongoose.Schema({
-  address: {
+const Exchange = new mongoose.Schema({
+  key: {
     type: String,
     unique: true,
     required: true
   },
-  balance: {type: mongoose.Schema.Types.Long, default: 0},
+  address: {
+    type: String,
+    required: true
+  },
+  swap_id: {
+    type: String,
+    unique: true,
+    required: true
+  },
   created: {type: Date, required: true, default: Date.now},
   isActive: {type: Boolean, required: true, default: true}
 });
 
 
-module.exports = mongoose.accounts.model(`${config.mongo.accounts.collectionPrefix}Account`, Account);
+module.exports = mongoose.sidechain.model(`${config.sidechainMongo.collectionPrefix}Exchange`, Exchange);

@@ -35,15 +35,11 @@ To apply your configuration, create a .env file in root folder of repo (in case 
 Below is the expamle configuration:
 
 ```
-MONGO_ACCOUNTS_URI=mongodb://localhost:27017/data
-MONGO_ACCOUNTS_COLLECTION_PREFIX=eth_mainnet
+MONGO_URI=mongodb://localhost:27017/data
+MONGO_COLLECTION_PREFIX=eth_mainnet
 
-MONGO_DATA_URI=mongodb://localhost:27017/data
-MONGO_DATA_COLLECTION_PREFIX=eth_mainnet
-
-SIDECHAIN_MONGO_ACCOUNTS_COLLECTION_PREFIX=eth_sidechain
-
-SIDECHAIN_MONGO_DATA_COLLECTION_PREFIX=eth_sidechain
+SIDECHAIN_MONGO_DATA_URI=mongodb://localhost:27017/data
+SIDECHAIN_MONGO_COLLECTION_PREFIX=eth_sidechain
 
 RABBIT_URI=amqp://localhost:5672
 RABBIT_SERVICE_NAME=app_eth_mainnet
@@ -71,14 +67,8 @@ The options are presented below:
 | ------ | ------ |
 | MONGO_URI   | the URI string for mongo connection(mainnet)
 | MONGO_COLLECTION_PREFIX   | the default prefix for all mongo collections(mainnet). The default value is 'eth'
-| MONGO_ACCOUNTS_URI   | the URI string for mongo connection(mainnet), which holds users accounts (if not specified, then default MONGO_URI connection will be used)
-| MONGO_ACCOUNTS_COLLECTION_PREFIX   | the collection prefix(mainnet) for accounts collection in mongo (If not specified, then the default MONGO_COLLECTION_PREFIX will be used)
-| MONGO_DATA_URI   | the URI string for mongo connection(mainnet), which holds data collections (for instance, processed block's height). In case, it's not specified, then default MONGO_URI connection will be used)
-| MONGO_DATA_COLLECTION_PREFIX   | the collection prefix(mainnet)  for data collections in mongo (If not specified, then the default MONGO_COLLECTION_PREFIX will be used)
 | SIDECHAIN_MONGO_URI   | the URI string for mongo connection(sidechain) 
 | SIDECHAIN_MONGO_COLLECTION_PREFIX   | the default prefix(sidechain)  for all mongo collections. The default value is 'eth'
-| SIDECHAIN_MONGO_ACCOUNTS_COLLECTION_PREFIX   | the collection prefix(sidechain)  for accounts collection in mongo (If not specified, then the default MONGO_COLLECTION_PREFIX will be used)
-| SIDECHAIN_MONGO_DATA_COLLECTION_PREFIX   | the collection prefix for data collections in mongo (sidechain) (If not specified, then the default MONGO_COLLECTION_PREFIX will be used)
 | NODERED_MONGO_URI   | the URI string for mongo connection, which holds data collections (for instance, processed block's height). In case, it's not specified, then default MONGO_URI connection will be used)
 | NODE_RED_MONGO_COLLECTION_PREFIX   | the collection prefix for node-red collections in mongo (If not specified, then the collections will be created without prefix)
 | DOMAIN | rest plugin domain
