@@ -1,3 +1,5 @@
 node_modules/
+chronobank-smart-contracts
+chronobank-smart-contracts-atomic-swap
 package-lock.json
 .env
