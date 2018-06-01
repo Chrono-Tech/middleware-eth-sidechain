@@ -41,7 +41,7 @@ const path = require('path'),
     uri: process.env.SIDECHAIN_MONGO_URI || 'mongodb://localhost:27017/data',
     collectionPrefix: process.env.SIDECHAIN_MONGO_COLLECTION_PREFIX || 'eth_sidechain',
   },
-  WalletProvider = require('../services/WallerProvider'),
+  WalletProvider = require('../services/WalletProvider'),
   sidechainWeb3 = {
     oracleKey: process.env.SIDECHAIN_ORACLE_PRIVATE_KEY,
     uri: `${process.env.SIDEHCAIN_WEB3_URI || `/tmp/${(process.env.SIDECHAIN_NETWORK || 'development')}/geth.ipc`}`,
@@ -64,13 +64,20 @@ const sidechainWallet = require('ethereumjs-wallet').fromPrivateKey(Buffer.from(
 
 let config = {
   mongo,
+  rabbit,
+  sidechainRabbit,
   sidechainMongo,
   rest: {
     domain: process.env.DOMAIN || 'localhost',
     port: parseInt(process.env.REST_PORT) || 8081
   },
   nodered: {
+    mongo: {
+      uri: process.env.NODERED_MONGO_URI || process.env.MONGO_URI || 'mongodb://localhost:27017/data',
+      collectionPrefix: process.env.NODERED_MONGO_COLLECTION_PREFIX || '',
+    },
     httpServer: parseInt(process.env.USE_HTTP_SERVER) || false,
+    useLocalServer: true,
     autoSyncMigrations: process.env.NODERED_AUTO_SYNC_MIGRATIONS || true,
     customNodesDir: [path.join(__dirname, '../')],
     migrationsDir: path.join(__dirname, '../migrations'),
@@ -87,6 +94,7 @@ let config = {
         EthCrypto: EthCrypto
       },
       settings: {
+        rabbit,
         mainnet: {
           mongo,
           rabbit,
@@ -106,5 +114,6 @@ let config = {
     }
   }
 };
+
 
 module.exports = config;

@@ -37,7 +37,7 @@ describe('core/eth-sidechain', function () { //todo add integration tests for qu
     await exchangeModel.remove();
     await sidechainExchangeModel.remove();
 
-    let amqpInstance = await amqp.connect(config.nodered.functionGlobalContext.settings.rabbit.url);
+    let amqpInstance = await amqp.connect(config.nodered.functionGlobalContext.settings.mainnet.rabbit.url);
     channel = await amqpInstance.createChannel();
   
     try {
@@ -45,6 +45,7 @@ describe('core/eth-sidechain', function () { //todo add integration tests for qu
     } catch (e) {
       channel = await amqpInstance.createChannel();
     }
+
 
     const sidechainProvider = config.nodered.functionGlobalContext.settings.sidechain.provider;
     sidechainWeb3 = new Web3();
@@ -63,10 +64,11 @@ describe('core/eth-sidechain', function () { //todo add integration tests for qu
 
 
   it('check from mainnet to sidechain', async () => {
-        const privateKey = 'b7616111ee3c709ff907777d25b863d15109494a240d39c4f0b51fdb5245e99b';
+    const privateKey = 'b7616111ee3c709ff907777d25b863d15109494a240d39c4f0b51fdb5245e99b';
     const userWallet = Wallet.fromPrivateKey(Buffer.from(privateKey, 'hex'));
     const userAddress = `0x${userWallet.getAddress().toString('hex')}`;
     const userPubKey = userWallet.getPublicKey().toString('hex');
+    const symbol = config.nodered.functionGlobalContext.settings.sidechain.symbol;
 
 
     contracts.ERC20Manager.setProvider(web3.currentProvider); 
@@ -80,15 +82,14 @@ describe('core/eth-sidechain', function () { //todo add integration tests for qu
     const timeHolder = await contracts.TimeHolder.deployed();
     const swapContract = await sidechainContracts.AtomicSwapERC20.deployed();
 
-    const timeAddress = await erc20Manager.getTokenAddressBySymbol('TIME');
-
+    const timeAddress = await erc20Manager.getTokenAddressBySymbol(symbol);
     await contracts.ERC20Interface.at(timeAddress).approve(timeHolderWallet.address, 1000, {from: userAddress, gas: 5700000});
-    // const initBalance = await contracts.ERC20Interface.at(timeAddress).balanceOf(userAddress);
-    // console.log('initBalance on mainnet', initBalance.toNumber());
+
+    const initBalance = await contracts.ERC20Interface.at(timeAddress).balanceOf(userAddress);
+    console.log('initBalance on mainnet', initBalance.toNumber());
     
     const lock = await timeHolder.deposit(timeAddress, 1000, {from: userAddress, gas: 5700000})
-    //expect(lock.logs[0].args.who).to.not.be.empty;
-
+    expect(lock.logs[0].args.who).to.not.be.empty;
     await timeHolder.lock(timeAddress, 1000, {from: userAddress, gas: 5700000})
     
     await Promise.delay(20000);
@@ -115,25 +116,22 @@ describe('core/eth-sidechain', function () { //todo add integration tests for qu
     expect(key).to.not.empty;
     expect(userAddress).to.not.empty;
 
-// const middlewareAddress = config.nodered.functionGlobalContext.settings.sidechain.addresses.middleware;
-// console.log(swapid, key, userAddress);
 
-
-sidechainContracts.ChronoBankPlatform.setProvider(sidechainWeb3.currentProvider);
-  const platform = await sidechainContracts.ChronoBankPlatform.deployed();
-  const tokenAddress = await platform.proxies('TIME');
+    sidechainContracts.ChronoBankPlatform.setProvider(sidechainWeb3.currentProvider);
+    const platform = await sidechainContracts.ChronoBankPlatform.deployed();
+    const tokenAddress = await platform.proxies(symbol);
 
     sidechainContracts.ERC20.setProvider(sidechainWeb3.currentProvider); 
-    const oldSidechainBalance = await sidechainContracts.ERC20.at(tokenAddress).balanceOf(swapContract.address);
+    const oldSidechainBalance = await sidechainContracts.ERC20.at(tokenAddress).balanceOf(userAddress);
     console.log('oldBalance on sidechain', tokenAddress, oldSidechainBalance.toNumber());
 
     const response = await swapContract.close(swapid, key, {from: userAddress, gas: 5700000});
-    // console.log('rrr', response);
     expect(response).to.not.empty;
 
 
+    const newBalance = await contracts.ERC20Interface.at(timeAddress).balanceOf(userAddress);
+    console.log('newBalance on mainnet', newBalance.toNumber());
 
-    
     sidechainContracts.ERC20.setProvider(sidechainWeb3.currentProvider); 
     const newSidechainBalance = await sidechainContracts.ERC20.at(tokenAddress).balanceOf(userAddress);
     console.log('newBalance on sidechain', newSidechainBalance.toNumber());
@@ -146,6 +144,7 @@ sidechainContracts.ChronoBankPlatform.setProvider(sidechainWeb3.currentProvider)
     const userWallet = Wallet.fromPrivateKey(Buffer.from(privateKey, 'hex'));
     const userAddress = `0x${userWallet.getAddress().toString('hex')}`;
     const userPubKey = userWallet.getPublicKey().toString('hex');
+    const symbol = config.nodered.functionGlobalContext.settings.sidechain.symbol;
     
     contracts.ERC20Manager.setProvider(web3.currentProvider); 
     contracts.ERC20Interface.setProvider(web3.currentProvider); 
@@ -153,14 +152,22 @@ sidechainContracts.ChronoBankPlatform.setProvider(sidechainWeb3.currentProvider)
     contracts.TimeHolderWallet.setProvider(web3.currentProvider); 
     
     let erc20Manager = await contracts.ERC20Manager.deployed();
-    const timeAddress = await erc20Manager.getTokenAddressBySymbol("TIME");
-    //8546 
+    const timeAddress = await erc20Manager.getTokenAddressBySymbol(symbol);
+
     const initBalance = await contracts.ERC20Interface.at(timeAddress).balanceOf(userAddress);
-    console.log('oldBalance on mainnet', newBalance.toNumber());
-   
+    console.log('oldBalance on mainnet', initBalance.toNumber());
+
     sidechainContracts.ChronoBankPlatform.setProvider(sidechainWeb3.currentProvider);
-    const platform = await sidechainContracts.ChronoBankPlatform.deployed();//8546
-    await platform.revokeAsset("TIME", 1000, {from: userAddress});
+    const platform = await sidechainContracts.ChronoBankPlatform.deployed();
+
+    const tokenAddress = await platform.proxies(symbol);
+    
+
+    sidechainContracts.ERC20.setProvider(sidechainWeb3.currentProvider); 
+    const oldSidechainBalance = await sidechainContracts.ERC20.at(tokenAddress).balanceOf(userAddress);
+    console.log('oldBalance on sidechain', oldSidechainBalance.toNumber());
+   
+    await platform.revokeAsset(symbol, 1000, {from: userAddress, gas: 5700000});
   
   
     await Promise.delay(20000);
@@ -186,15 +193,22 @@ sidechainContracts.ChronoBankPlatform.setProvider(sidechainWeb3.currentProvider)
     expect(key).to.not.empty;
     expect(userAddress).to.not.empty;
   
-    // 8545
+    
     contracts.TimeHolder.setProvider(web3.currentProvider);
     const timeHolder = await contracts.TimeHolder.deployed();
     const response = await timeHolder.unlockShares(swapid, key, {from: userAddress, gas: 5700000});
+    expect(response).to.not.empty;
 
 
     const newBalance = await contracts.ERC20Interface.at(timeAddress).balanceOf(userAddress);
     console.log('newBalance on mainnet', newBalance.toNumber());
     expect(newBalance.minus(initBalance).lessThan(1000));
+
+
+    sidechainContracts.ERC20.setProvider(sidechainWeb3.currentProvider); 
+    const newSidechainBalance = await sidechainContracts.ERC20.at(tokenAddress).balanceOf(userAddress);
+    console.log('newBalance on sidechain', newSidechainBalance.toNumber());
+    expect(newSidechainBalance.minus(initBalance).lessThan(1000));
    
   });
 
