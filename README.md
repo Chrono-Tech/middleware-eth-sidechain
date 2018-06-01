@@ -67,6 +67,7 @@ NODERED_AUTO_SYNC_MIGRATIONS=true
 ```
 
 The options are presented below:
+
 | name | description |
 | ------ | ------ |
 | MONGO_URI   | the URI string for mongo connection(mainnet)
