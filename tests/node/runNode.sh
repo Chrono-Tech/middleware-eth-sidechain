@@ -22,16 +22,19 @@ ganache-cli  --port="$PORT"  \
 if [[ "$SIDECHAIN" = "mainnet"]]
 then
     cd $BUILD_DIR
-    git clone https://github.com/ChronoBank/LXsidechain-sc.git node_modules/chronobank-smart-contracts
+    git clone https://github.com/ChronoBank/SmartContracts.git chronobank-smart-contracts
+    cd $BUILD_DIR/chronobank-smart-contracts    
     git checkout develop
-    cd $BUILD_DIR/node_modules/chronobank-smart-contracts
     npm i 
     cat $BUILD_DIR/tests/node/truffle.js | sed -e "s/port: 8545/port: $PORT/g" > truffle.js
     node --max_old_space_size=8000 $BUILD_DIR/node_modules/truffle/build/cli.bundled.js migrate
 #deploy chronobank smart contracts on sidechain    
 else
-    cd $BUILD_DIR/node_modules/chronobank-smart-contracts-atomic-swap
-    npm i 
+    cd $BUILD_DIR
+    git clone https://github.com/ChronoBank/LXsidechain-sc.git chronobank-smart-contracts-atomic-swap
+    cd  $BUILD_DIR/chronobank-smart-contracts-atomic-swap  
+    git checkout develop    
+    npm i
     cat $BUILD_DIR/tests/node/truffle.js | sed -e "s/port: 8545/port: $PORT/g" > truffle.js
     node --max_old_space_size=8000 $BUILD_DIR/node_modules/truffle/build/cli.bundled.js migrate
 fi
@@ -62,13 +65,13 @@ then
     RABBIT_SERVICE_NAME="app_eth_$MAINNET" MONGO_DATA_COLLECTION_PREFIX="eth_$MAINNET" \
     MONGO_ACCOUNTS_COLLECTION_PREFIX="eth_$MAINNET" MONGO_ACCOUNTS_COLLECTION_PREFIX="eth_$MAINNET" \
     WEB3_URI="http://localhost:$PORT" \
-    SMART_CONTRACTS_PATH="$BUILD_DIR/node_modules/chronobank-smart-contracts/build/contracts" \
+    SMART_CONTRACTS_PATH="$BUILD_DIR/chronobank-smart-contracts/build/contracts" \
     pm2 start index.js --name "chrono_$MAINNET"
 else 
     RABBIT_SERVICE_NAME="app_eth_$MAINNET" MONGO_DATA_COLLECTION_PREFIX="eth_$MAINNET" \
     MONGO_ACCOUNTS_COLLECTION_PREFIX="eth_$MAINNET" MONGO_ACCOUNTS_COLLECTION_PREFIX="eth_$MAINNET" \
     WEB3_URI="http://localhost:$PORT" \
-    SMART_CONTRACTS_PATH="$BUILD_DIR/node_modules/chronobank-smart-contracts-atomic-swap/build/contracts" \
-    pm2 start index.js --name "chrono_$MAINNEt"
+    SMART_CONTRACTS_PATH="$BUILD_DIR/chronobank-smart-contracts-atomic-swap/build/contracts" \
+    pm2 start index.js --name "chrono_$MAINNET"
 fi
 

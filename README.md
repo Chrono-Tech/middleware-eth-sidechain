@@ -41,6 +41,10 @@ MONGO_COLLECTION_PREFIX=eth_mainnet
 SIDECHAIN_MONGO_DATA_URI=mongodb://localhost:27017/data
 SIDECHAIN_MONGO_COLLECTION_PREFIX=eth_sidechain
 
+NODERED_MONGO_URI=mongodb://localhost:27017/data
+NODERED_MONGO_COLLECTION_PREFIX=nodered
+
+
 RABBIT_URI=amqp://localhost:5672
 RABBIT_SERVICE_NAME=app_eth_mainnet
 SIDECHAIN_RABBIT_URI=amqp://localhost:5672
@@ -70,7 +74,7 @@ The options are presented below:
 | SIDECHAIN_MONGO_URI   | the URI string for mongo connection(sidechain) 
 | SIDECHAIN_MONGO_COLLECTION_PREFIX   | the default prefix(sidechain)  for all mongo collections. The default value is 'eth'
 | NODERED_MONGO_URI   | the URI string for mongo connection, which holds data collections (for instance, processed block's height). In case, it's not specified, then default MONGO_URI connection will be used)
-| NODE_RED_MONGO_COLLECTION_PREFIX   | the collection prefix for node-red collections in mongo (If not specified, then the collections will be created without prefix)
+| NODERED_MONGO_COLLECTION_PREFIX   | the collection prefix for node-red collections in mongo (If not specified, then the collections will be created without prefix)
 | DOMAIN | rest plugin domain
 | REST_PORT   | rest plugin port
 | USE_HTTP_SERVER | use http or https server
@@ -91,7 +95,6 @@ The options are presented below:
 | OWNER_ADDRESS | address owner of smart contracts in mainnet
 | SIDECHAIN_OWNER_ADDRESS | address owner of smart contracts in sidechain
 | SIDEHCAIN_MIDDLEWARE_ADDRESS | address middleware in sidechain, to transfer time tokens
-
 
 License
 ----
