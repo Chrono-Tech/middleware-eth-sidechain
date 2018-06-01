@@ -40,4 +40,4 @@ const Exchange = new mongoose.Schema({
 });
 
 
-module.exports = mongoose.data.model(`${config.mongo.data.collectionPrefix}Exchange`, Exchange);
+module.exports = mongoose.mainnet.model(`${config.mongo.collectionPrefix}Exchange`, Exchange);

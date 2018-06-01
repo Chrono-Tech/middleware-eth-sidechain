@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "main": "index.js",
   "dependencies": {
+    "amqplib": "^0.5.2",
     "bunyan": "^1.8.12",
     "chronobank-smart-contracts": "git+https://github.com/ChronoBank/SmartContracts.git#develop",
     "dotenv": "^4.0.0",
@@ -15,7 +16,8 @@
     "require-all": "^2.2.0",
     "truffle-contract": "^3.0.4",
     "uniqid": "^4.1.1",
-    "web3": "^0.20.0"
+    "web3": "^0.20.0",
+    "web3-provider-engine": "^13.8.0"
   },
   "scripts": {
     "lint": "node ./node_modules/eslint/bin/eslint.js -c .eslintrc.js --ext .js --fix --ignore-path .eslintignore .",
@@ -30,10 +32,10 @@
   "devDependencies": {
     "babel-eslint": "^8.0.2",
     "chai": "^4.1.1",
+    "chronobank-smart-contracts-atomic-swap": "git+https://github.com/ChronoBank/LXsidechain-sc.git#develop",
     "eslint": "^4.6.1",
     "eslint-plugin-chronobank": "github:chronobank/eslint-plugin-chronobank",
     "ethereumjs-wallet": "^0.6.0",
-    "chronobank-smart-contracts-atomic-swap": "git+https://github.com/ChronoBank/LXsidechain-sc.git#develop",
     "mocha": "^3.5.0",
     "request": "^2.85.0",
     "request-promise": "^4.2.2",

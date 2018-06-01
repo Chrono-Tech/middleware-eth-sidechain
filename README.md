@@ -35,17 +35,15 @@ To apply your configuration, create a .env file in root folder of repo (in case 
 Below is the expamle configuration:
 
 ```
-MONGO_ACCOUNTS_URI=mongodb://localhost:27017/data
-MONGO_ACCOUNTS_COLLECTION_PREFIX=eth_mainnet
-
-MONGO_DATA_URI=mongodb://localhost:27017/data
-MONGO_DATA_COLLECTION_PREFIX=eth_mainnet
-
-SIDECHAIN_MONGO_ACCOUNTS_URI=mongodb://localhost:27017/data
-SIDECHAIN_MONGO_ACCOUNTS_COLLECTION_PREFIX=eth_sidechain
+MONGO_URI=mongodb://localhost:27017/data
+MONGO_COLLECTION_PREFIX=eth_mainnet
 
 SIDECHAIN_MONGO_DATA_URI=mongodb://localhost:27017/data
-SIDECHAIN_MONGO_DATA_COLLECTION_PREFIX=eth_sidechain
+SIDECHAIN_MONGO_COLLECTION_PREFIX=eth_sidechain
+
+NODERED_MONGO_URI=mongodb://localhost:27017/data
+NODERED_MONGO_COLLECTION_PREFIX=nodered
+
 
 RABBIT_URI=amqp://localhost:5672
 RABBIT_SERVICE_NAME=app_eth_mainnet
@@ -55,32 +53,33 @@ SIDECHAIN_RABBIT_SERVICE_NAME=app_eth_sidechain
 WEB3_URI=http://localhost:8545
 WEB3_SIDECHAIN_URI=http://localhost:8546
 
+
+ORACLE_PRIVATE_KEY=
+OWNER_ADDRESS=0x30e8dc8fb374f297d330aa1ed3ad55eed22782cf
+
+SIDECHAIN_ORACEL_PRIVATE_KEY=
+SIDECHAIN_OWNER_ADDRESS=0x30e8dc8fb374f297d330aa1ed3ad55eed22782cf
+SIDECHAIN_MIDDLEWARE_ADDRESS=0xec723c98b4cff7383fd9dca22f2a9aafe174c600
+
 REST_PORT=8081
 USE_HTTP_SERVER=1
 NODERED_AUTO_SYNC_MIGRATIONS=true
 ```
 
 The options are presented below:
+
 | name | description |
 | ------ | ------ |
 | MONGO_URI   | the URI string for mongo connection(mainnet)
 | MONGO_COLLECTION_PREFIX   | the default prefix for all mongo collections(mainnet). The default value is 'eth'
-| MONGO_ACCOUNTS_URI   | the URI string for mongo connection(mainnet), which holds users accounts (if not specified, then default MONGO_URI connection will be used)
-| MONGO_ACCOUNTS_COLLECTION_PREFIX   | the collection prefix(mainnet) for accounts collection in mongo (If not specified, then the default MONGO_COLLECTION_PREFIX will be used)
-| MONGO_DATA_URI   | the URI string for mongo connection(mainnet), which holds data collections (for instance, processed block's height). In case, it's not specified, then default MONGO_URI connection will be used)
-| MONGO_DATA_COLLECTION_PREFIX   | the collection prefix(mainnet)  for data collections in mongo (If not specified, then the default MONGO_COLLECTION_PREFIX will be used)
 | SIDECHAIN_MONGO_URI   | the URI string for mongo connection(sidechain) 
 | SIDECHAIN_MONGO_COLLECTION_PREFIX   | the default prefix(sidechain)  for all mongo collections. The default value is 'eth'
-| SIDECHAIN_MONGO_ACCOUNTS_URI   | the URI string for mongo connection(sidechain) , which holds users accounts (if not specified, then default MONGO_URI connection will be used)
-| SIDECHAIN_MONGO_ACCOUNTS_COLLECTION_PREFIX   | the collection prefix(sidechain)  for accounts collection in mongo (If not specified, then the default MONGO_COLLECTION_PREFIX will be used)
-| SIDECHAIN_MONGO_DATA_URI   | the URI string for mongo connection(sidechain) , which holds data collections (for instance, processed block's height). In case, it's not specified, then default MONGO_URI connection will be used)
-| SIDECHAIN_MONGO_DATA_COLLECTION_PREFIX   | the collection prefix for data collections in mongo (sidechain) (If not specified, then the default MONGO_COLLECTION_PREFIX will be used)
 | NODERED_MONGO_URI   | the URI string for mongo connection, which holds data collections (for instance, processed block's height). In case, it's not specified, then default MONGO_URI connection will be used)
-| NODE_RED_MONGO_COLLECTION_PREFIX   | the collection prefix for node-red collections in mongo (If not specified, then the collections will be created without prefix)
+| NODERED_MONGO_COLLECTION_PREFIX   | the collection prefix for node-red collections in mongo (If not specified, then the collections will be created without prefix)
 | DOMAIN | rest plugin domain
 | REST_PORT   | rest plugin port
 | USE_HTTP_SERVER | use http or https server
-| WEB3_SIDECHAIN_URI | uri for sidechain web3
+| SIDECHAIN_WEB3_URI | uri for sidechain web3
 | WEB3_URI | uri for mainnet web3
 | RABBIT_URI |  uri for rabbit mq messages in mainnet
 | RABBIT_SERVICE_NAME | prefix for rabbit mq messages in mainnet
@@ -92,7 +91,11 @@ The options are presented below:
 | SMART_CONTRACTS_PATH   | the path to compiled smart contracts (optional, if omitted - then the default dir from node_modules will be used)
 | SMART_ATOMIC_CONTRACTS_PATH | the path to compiled smart contracts atomic swap (optional, i omitted - the default dir from node_modules will be used)
 | NODERED_AUTO_SYNC_MIGRATIONS   | autosync migrations on start (default = yes)
-
+| ORACLE_PRIVATE_KEY | private key for wallet provider in mainnet
+| SIDEHCAIN_ORACLE_PRIVATE_KEY | private key for wallet provider in sidechain
+| OWNER_ADDRESS | address owner of smart contracts in mainnet
+| SIDECHAIN_OWNER_ADDRESS | address owner of smart contracts in sidechain
+| SIDEHCAIN_MIDDLEWARE_ADDRESS | address middleware in sidechain, to transfer time tokens
 
 License
 ----
