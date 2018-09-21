@@ -15,6 +15,9 @@ const config = require('./config'),
   path = require('path'),
   bunyan = require('bunyan'),
   migrator = require('middleware_service.sdk').migrator,
+  AmqpService = require('middleware_common_infrastructure/AmqpService'),
+  InfrastructureInfo = require('middleware_common_infrastructure/InfrastructureInfo'),
+  InfrastructureService = require('middleware_common_infrastructure/InfrastructureService'),
   _ = require('lodash'),
   log = bunyan.createLogger({name: 'core.rest'}),
   redInitter = require('middleware_service.sdk').init;
@@ -30,7 +33,26 @@ mongoose.sidechain = mongoose.createConnection(config.sidechain.mongo.uri);
   })
 );
 
+const runSystem = async function () {
+  const rabbit = new AmqpService(
+    config.systemRabbit.url, 
+    config.systemRabbit.exchange,
+    config.systemRabbit.serviceName
+  );
+  const info = new InfrastructureInfo(require('./package.json'));
+  const system = new InfrastructureService(info, rabbit, {checkInterval: 10000});
+  await system.start();
+  system.on(system.REQUIREMENT_ERROR, ({requirement, version}) => {
+    log.error(`Not found requirement with name ${requirement.name} version=${requirement.version}.` +
+        ` Last version of this middleware=${version}`);
+    process.exit(1);
+  });
+  await system.checkRequirements();
+  system.periodicallyCheck();
+};
 const init = async () => {
+  if (config.checkSystem)
+    await runSystem();
 
   require('require-all')({
     dirname: path.join(__dirname, '/models'),
