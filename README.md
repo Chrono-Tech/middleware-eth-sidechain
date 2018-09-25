@@ -96,6 +96,10 @@ The options are presented below:
 | OWNER_ADDRESS | address owner of smart contracts in mainnet
 | SIDECHAIN_OWNER_ADDRESS | address owner of smart contracts in sidechain
 | SIDEHCAIN_MIDDLEWARE_ADDRESS | address middleware in sidechain, to transfer time tokens
+| SYSTEM_RABBIT_URI   | rabbitmq URI connection string for infrastructure
+| SYSTEM_RABBIT_SERVICE_NAME   | rabbitmq service name for infrastructure
+| SYSTEM_RABBIT_EXCHANGE   | rabbitmq exchange name for infrastructure
+| CHECK_SYSTEM | check infrastructure or not (default = true)
 
 License
 ----
