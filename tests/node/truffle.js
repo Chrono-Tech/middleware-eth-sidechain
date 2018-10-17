@@ -1,9 +1,14 @@
+const URL = require('url').URL;
+
+const mainUrl = new URL(process.env.WEB3_URI || 'http://localhost:8545');
+const sidechainUrl = new URL(process.env.SIDEHCAIN_WEB3_URI || 'http://localhost:8546');
+
 module.exports = {
   networks: {
     development: {
       host: 'localhost',
-      port: 8545,
-      network_id: '*', // Match any network id
+      port: process.env.TYPE === '1' ? mainUrl.port : sidechainUrl.port,
+      network_id: 86, // Match any network id
       gas: 5700000
     }
   },
@@ -12,6 +17,5 @@ module.exports = {
       enabled: true,
       runs: 200
     }
-  },
-  migrations_directory: './migrations'
+  }
 };
