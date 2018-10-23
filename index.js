@@ -20,8 +20,8 @@ const config = require('./config'),
   redInitter = require('middleware_service.sdk').init;
 
 mongoose.Promise = Promise;
-mongoose.mainnet = mongoose.createConnection(config.mongo.uri);
-mongoose.sidechain = mongoose.createConnection(config.sidechainMongo.uri);
+mongoose.mainnet = mongoose.createConnection(config.main.mongo.uri);
+mongoose.sidechain = mongoose.createConnection(config.sidechain.mongo.uri);
 
 [mongoose.sidechain, mongoose.mainnet].forEach(instance =>
   instance.on('disconnected', function () {
@@ -38,9 +38,13 @@ const init = async () => {
   });
 
   if (config.nodered.autoSyncMigrations)
-    await migrator.run(config.nodered.mongo.uri, path.join(__dirname, 'migrations'), `_${_.get(config, 'nodered.mongo.collectionPrefix', '')}migrations`);
+    await migrator.run(
+      config,
+      path.join(__dirname, 'migrations')
+    );
 
   redInitter(config);
+
 };
 
 module.exports = init();
