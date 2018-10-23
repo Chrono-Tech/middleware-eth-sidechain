@@ -40,4 +40,4 @@ const Exchange = new mongoose.Schema({
 });
 
 
-module.exports = mongoose.sidechain.model(`${config.sidechainMongo.collectionPrefix}Exchange`, Exchange);
+module.exports = mongoose.sidechain.model(`${config.sidechain.mongo.collectionPrefix}Exchange`, Exchange);
