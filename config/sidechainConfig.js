@@ -10,12 +10,20 @@
  */
 require('dotenv').config();
 const path = require('path'),
+  fs = require('fs'),
   Wallet = require('ethereumjs-wallet'),
   contract = require('truffle-contract'),
   requireAll = require('require-all'),
-  WalletProvider = require('../services/WalletProvider'),
+  WalletProvider = require('../services/WalletProvider');
+
+
+let contracts = {};
+
+const contractDir = process.env.SMART_ATOMIC_CONTRACTS_PATH ? path.resolve(process.env.SMART_ATOMIC_CONTRACTS_PATH) : path.resolve(__dirname, '../node_modules/chronobank-smart-contracts/build/contracts');
+
+if(fs.existsSync(contractDir))
   contracts = requireAll({
-    dirname: process.env.SMART_ATOMIC_CONTRACTS_PATH ? path.resolve(process.env.SMART_ATOMIC_CONTRACTS_PATH) : path.resolve(__dirname, '../node_modules/chronobank-smart-contracts/build/contracts'),
+    dirname: contractDir,
     resolve: Contract => contract(Contract)
   });
 

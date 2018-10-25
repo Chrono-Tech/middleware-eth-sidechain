@@ -12,6 +12,9 @@ const config = require('../config'),
   spawn = require('child_process').spawn,
   Web3 = require('web3'),
   net = require('net'),
+  requireAll = require('require-all'),
+  contract = require('truffle-contract'),
+  path = require('path'),
   /*  fuzzTests = require('./fuzz'),
     performanceTests = require('./performance'),
     blockTests = require('./blocks'),*/
@@ -40,36 +43,37 @@ describe('core/sidechain', function () {
     await new Promise(res => {
       ctx.nodePid.stdout.on('data', (data) => {
         data = data.toString();
+        console.log(data);
         if (data.includes('sidechain token'))
           res();
       });
     });
+
+    config.main.contracts = requireAll({
+        dirname: process.env.SMART_CONTRACTS_PATH ? path.resolve(process.env.SMART_CONTRACTS_PATH) : path.resolve(__dirname, '../node_modules/chronobank-smart-contracts/build/contracts'),
+        resolve: Contract => contract(Contract)
+      });
+
+    config.sidechain.contracts = requireAll({
+      dirname: process.env.SMART_ATOMIC_CONTRACTS_PATH ? path.resolve(process.env.SMART_ATOMIC_CONTRACTS_PATH) : path.resolve(__dirname, '../node_modules/chronobank-smart-contracts/build/contracts'),
+      resolve: Contract => contract(Contract)
+    });
+
+    ctx.web3 = {
+      main: new Web3(config.main.web3.provider.getInstance()),
+      sidechain: new Web3(config.sidechain.web3.provider.getInstance())
+    };
+
+    ctx.amqp = {};
+    ctx.amqp.instance = await amqp.connect(config.rabbit.url);
+    ctx.amqp.channel = await ctx.amqp.instance.createChannel();
+    await ctx.amqp.channel.assertExchange('events', 'topic', {durable: false});
 
 
     await Promise.delay(5000);
     ctx.nodePid.on('exit', function () {
       process.exit(1);
     });
-
-    /*  const provider = /http:\/\//.test(config.web3.providers[0]) ?
-        new Web3.providers.HttpProvider(config.web3.providers[0]) :
-        new Web3.providers.IpcProvider(`${/^win/.test(process.platform) ? '\\\\.\\pipe\\' : ''}${config.web3.providers[0]}`, net);
-
-      ctx.web3 = new Web3(provider);
-      ctx.accounts = await Promise.promisify(ctx.web3.eth.getAccounts)();
-
-
-      ctx.amqp = {};
-      ctx.amqp.instance = await amqp.connect(config.rabbit.url);
-      ctx.amqp.channel = await ctx.amqp.instance.createChannel();
-      await ctx.amqp.channel.assertExchange('events', 'topic', {durable: false});
-      await ctx.amqp.channel.assertExchange('internal', 'topic', {durable: false});
-      await ctx.amqp.channel.assertQueue(`${config.rabbit.serviceName}_current_provider.get`, {
-        durable: false,
-        autoDelete: true
-      });
-      await ctx.amqp.channel.bindQueue(`${config.rabbit.serviceName}_current_provider.get`, 'internal', `${config.rabbit.serviceName}_current_provider.get`);*/
-
   });
 
   after(async () => {

@@ -13,12 +13,12 @@ const config = require('./config'),
   mongoose = require('mongoose'),
   Promise = require('bluebird'),
   path = require('path'),
+  models = require('./models'),
   bunyan = require('bunyan'),
   migrator = require('middleware_service.sdk').migrator,
   AmqpService = require('middleware_common_infrastructure/AmqpService'),
   InfrastructureInfo = require('middleware_common_infrastructure/InfrastructureInfo'),
   InfrastructureService = require('middleware_common_infrastructure/InfrastructureService'),
-  _ = require('lodash'),
   log = bunyan.createLogger({name: 'core.rest'}),
   redInitter = require('middleware_service.sdk').init;
 
@@ -35,7 +35,7 @@ mongoose.sidechain = mongoose.createConnection(config.sidechain.mongo.uri);
 
 const runSystem = async function () {
   const rabbit = new AmqpService(
-    config.systemRabbit.url, 
+    config.systemRabbit.url,
     config.systemRabbit.exchange,
     config.systemRabbit.serviceName
   );
@@ -44,26 +44,21 @@ const runSystem = async function () {
   await system.start();
   system.on(system.REQUIREMENT_ERROR, (requirement, version) => {
     log.error(`Not found requirement with name ${requirement.name} version=${requirement.version}.` +
-        ` Last version of this middleware=${version}`);
+      ` Last version of this middleware=${version}`);
     process.exit(1);
   });
   await system.checkRequirements();
   system.periodicallyCheck();
 };
+
 const init = async () => {
   if (config.checkSystem)
     await runSystem();
 
-  require('require-all')({
-    dirname: path.join(__dirname, '/models'),
-    filter: /(.+Model)\.js$/
-  });
+  models.init();
 
   if (config.nodered.autoSyncMigrations)
-    await migrator.run(
-      config,
-      path.join(__dirname, 'migrations')
-    );
+    await migrator.run(config, path.join(__dirname, 'migrations'));
 
   redInitter(config);
 

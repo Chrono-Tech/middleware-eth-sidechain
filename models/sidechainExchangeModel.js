@@ -30,7 +30,7 @@ const Exchange = new mongoose.Schema({
     type: String,
     required: true
   },
-  swap_id: {
+  swapId: {
     type: String,
     unique: true,
     required: true

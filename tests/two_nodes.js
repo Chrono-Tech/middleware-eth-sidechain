@@ -90,7 +90,7 @@ describe('core/eth-sidechain', function () { //todo add integration tests for qu
     });
     expect(swapList).to.not.be.empty;
 
-    const swapid = swapList[0].swap_id;
+    const swapid = swapList[0].swapId;
 
     const keyEncoded = await request({
       method: 'POST',
@@ -166,7 +166,7 @@ describe('core/eth-sidechain', function () { //todo add integration tests for qu
       json: true
     });
 
-    const swapid = swapList[0].swap_id;
+    const swapid = swapList[0].swapId;
 
     const keyEncoded = await request({
       method: 'POST',
