@@ -42,6 +42,7 @@ module.exports = {
   web3: {
     wallet: wallet,
     uri: web3Uri,
+    symbol: process.env.SYMBOL || 'TIME',
     provider: new WalletProvider(wallet, web3Uri)
   }
 };

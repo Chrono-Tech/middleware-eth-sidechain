@@ -11,13 +11,15 @@ const config = require('../config'),
   models = require('../models'),
   spawn = require('child_process').spawn,
   Web3 = require('web3'),
+  Wallet = require('ethereumjs-wallet'),
   net = require('net'),
   requireAll = require('require-all'),
   contract = require('truffle-contract'),
   path = require('path'),
-  /*  fuzzTests = require('./fuzz'),
-    performanceTests = require('./performance'),
-    blockTests = require('./blocks'),*/
+  WalletProvider = require('../services/WalletProvider');
+/*  fuzzTests = require('./fuzz'),
+  performanceTests = require('./performance'),
+  blockTests = require('./blocks'),*/
   featuresTests = require('./features'),
   fs = require('fs-extra'),
   Promise = require('bluebird'),
@@ -59,10 +61,15 @@ describe('core/sidechain', function () {
       resolve: Contract => contract(Contract)
     });
 
+
+
+    ctx.userWallet =  Wallet.fromPrivateKey(Buffer.from('993130d3dd4de71254a94a47fdacb1c9f90dd33be8ad06b687bd95f073514a97', 'hex'));
+
     ctx.web3 = {
-      main: new Web3(config.main.web3.provider.getInstance()),
-      sidechain: new Web3(config.sidechain.web3.provider.getInstance())
+      main: new Web3( new WalletProvider(ctx.userWallet, config.main.web3.uri).getInstance()),
+      sidechain: new Web3( new WalletProvider(ctx.userWallet, config.sidechain.web3.uri).getInstance()),
     };
+
 
     ctx.amqp = {};
     ctx.amqp.instance = await amqp.connect(config.rabbit.url);
