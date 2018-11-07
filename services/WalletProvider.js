@@ -1,58 +1,48 @@
-const ProviderEngine = require('web3-provider-engine'),
-  FiltersSubprovider = require('web3-provider-engine/subproviders/filters.js'),
-  WalletSubProvider = require('./WalletSubProvider'),
-  Web3SubProvider = require('web3-provider-engine/subproviders/web3.js'),
-  Web3 = require('web3'),
+const Web3 = require('web3'),
+  _ = require('lodash'),
   net = require('net');
 
 
 
 class WalletProvider {
 
-  constructor (wallet, uri) {
-    this.wallet = wallet;
+  constructor (key, uri, contracts) {
+    this._key = key;
     this._started = false;
-    this.address = `0x${this.wallet.getAddress().toString('hex')}`;
+    this._contracts = contracts;
+    this.web3 = new Web3();
+    let walletResult = this.web3.eth.accounts.wallet.add(this._key);
+    this.address = walletResult.address;
 
-    this.engine = new ProviderEngine();
-
-    this.engine.addProvider(new WalletSubProvider(this.wallet));
-    this.engine.addProvider(new FiltersSubprovider());
-
-    const provider = /http:\/\//.test(uri) ?
+    this.provider = /http:\/\//.test(uri) ?
       new Web3.providers.HttpProvider(uri) :
       new Web3.providers.IpcProvider(`${/^win/.test(process.platform) ? '\\\\.\\pipe\\' : ''}${uri}`, net);
-
-    this.engine.addProvider(new Web3SubProvider(provider));
-
-
   }
 
 
-  getInstance(){
-    if(!this._started){
-      this.engine.start();
+  async getInstance () {
+    if (!this._started) {
+      await this.start();
       this._started = true;
     }
 
-      return this;
+    return this;
   }
 
+  async start () {
+    this.web3.setProvider(this.provider);
+    let networkId = await this.web3.eth.net.getId();
 
-  sendAsync () {
-    return this.engine.sendAsync(...arguments);
-  }
+    this.contracts = _.chain(this._contracts).values()
+      .transform((result, contract)=>{
 
-  send () {
-    return this.engine.send(...arguments);
-  }
+        result[contract.contractName] = new this.web3.eth.Contract(contract.abi, _.get(contract, `networks.${networkId}.address`))
+      }, {})
+      .value();
 
 
-  getAddress () {
-    return this.address;
   }
 
 }
-
 
 module.exports = WalletProvider;

@@ -10,11 +10,10 @@ process.env.LOG_LEVEL = 'error';
 const config = require('../config'),
   models = require('../models'),
   spawn = require('child_process').spawn,
-  Web3 = require('web3'),
-  Wallet = require('ethereumjs-wallet'),
-  net = require('net'),
   requireAll = require('require-all'),
-  contract = require('truffle-contract'),
+  Web3 = require('web3'),
+  web3 = new Web3(),
+  //contract = require('truffle-contract'),
   path = require('path'),
   WalletProvider = require('../services/WalletProvider');
 /*  fuzzTests = require('./fuzz'),
@@ -51,24 +50,26 @@ describe('core/sidechain', function () {
       });
     });
 
-    config.main.contracts = requireAll({
-        dirname: process.env.SMART_CONTRACTS_PATH ? path.resolve(process.env.SMART_CONTRACTS_PATH) : path.resolve(__dirname, '../node_modules/chronobank-smart-contracts/build/contracts'),
-        resolve: Contract => contract(Contract)
+    const mainContracts = requireAll({
+        dirname: process.env.SMART_CONTRACTS_PATH ? path.resolve(process.env.SMART_CONTRACTS_PATH) : path.resolve(__dirname, '../node_modules/chronobank-smart-contracts/build/contracts')
       });
 
-    config.sidechain.contracts = requireAll({
-      dirname: process.env.SMART_ATOMIC_CONTRACTS_PATH ? path.resolve(process.env.SMART_ATOMIC_CONTRACTS_PATH) : path.resolve(__dirname, '../node_modules/chronobank-smart-contracts/build/contracts'),
-      resolve: Contract => contract(Contract)
+    const sidechainContracts = requireAll({
+      dirname: process.env.SMART_ATOMIC_CONTRACTS_PATH ? path.resolve(process.env.SMART_ATOMIC_CONTRACTS_PATH) : path.resolve(__dirname, '../node_modules/chronobank-smart-contracts/build/contracts')
     });
 
 
 
-    ctx.userWallet =  Wallet.fromPrivateKey(Buffer.from('993130d3dd4de71254a94a47fdacb1c9f90dd33be8ad06b687bd95f073514a97', 'hex'));
+    ctx.ownerWallet = web3.eth.accounts.privateKeyToAccount('0x6b9027372deb53f4ae973a5614d8a57024adf33126ece6b587d9e08ba901c0d2');
+    ctx.userWallet = web3.eth.accounts.create();
 
-    ctx.web3 = {
-      main: new Web3( new WalletProvider(ctx.userWallet, config.main.web3.uri).getInstance()),
-      sidechain: new Web3( new WalletProvider(ctx.userWallet, config.sidechain.web3.uri).getInstance()),
+    ctx.providers = {
+      main: new WalletProvider(ctx.userWallet.privateKey, config.main.web3.uri, mainContracts),
+      sidechain: new WalletProvider(ctx.userWallet.privateKey, config.sidechain.web3.uri, sidechainContracts)
     };
+
+    ctx.providers.main = await ctx.providers.main.getInstance();
+    ctx.providers.sidechain = await ctx.providers.sidechain.getInstance();
 
 
     ctx.amqp = {};

@@ -12,7 +12,7 @@ require('dotenv').config();
 const path = require('path'),
   fs = require('fs'),
   Wallet = require('ethereumjs-wallet'),
-  contract = require('truffle-contract'),
+  //contract = require('truffle-contract'),
   requireAll = require('require-all'),
   WalletProvider = require('../services/WalletProvider');
 
@@ -23,12 +23,10 @@ const contractDir = process.env.SMART_ATOMIC_CONTRACTS_PATH ? path.resolve(proce
 
 if(fs.existsSync(contractDir))
   contracts = requireAll({
-    dirname: contractDir,
-    resolve: Contract => contract(Contract)
+    dirname: contractDir
   });
 
 const web3Uri = process.env.SIDEHCAIN_WEB3_URI || 'http://localhost:8546';
-const wallet = Wallet.fromPrivateKey(Buffer.from(process.env.SIDECHAIN_ORACLE_PRIVATE_KEY, 'hex'));
 
 module.exports = {
   rabbit: {
@@ -41,9 +39,8 @@ module.exports = {
   },
   contracts: contracts,
   web3: {
-    wallet: wallet,
     uri: web3Uri,
     symbol: process.env.SIDECHAIN_SYMBOL || 'TIME',
-    provider: new WalletProvider(wallet, web3Uri)
+    provider: new WalletProvider(process.env.SIDECHAIN_ORACLE_PRIVATE_KEY, web3Uri, contracts)
   }
 };

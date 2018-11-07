@@ -15,6 +15,7 @@ const path = require('path'),
   web3 = require('web3'),
   uniqid = require('uniqid'),
   crypto = require('crypto'),
+  sha3 = require('js-sha3'),
   EthCrypto = require('eth-crypto'),
   mongoose = require('mongoose');
 
@@ -48,6 +49,7 @@ let config = {
       },
       libs: {
         web3: web3,
+        sha3: sha3,
         uniqid: uniqid,
         crypto: crypto,
         EthCrypto: EthCrypto
