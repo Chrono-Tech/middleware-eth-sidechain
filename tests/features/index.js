@@ -9,6 +9,7 @@ require('dotenv/config');
 const config = require('../../config'),
   models = require('../../models'),
   _ = require('lodash'),
+  Wallet = require('ethereumjs-wallet'),
   request = require('request-promise'),
   EthCrypto = require('eth-crypto'),
   expect = require('chai').expect,
@@ -33,8 +34,8 @@ module.exports = (ctx) => {
 */
 
 
-    ctx.sidechainPid = spawn('node', ['index.js'], {env: process.env, stdio: 'ignore'});
-    await Promise.delay(30000);
+   // ctx.sidechainPid = spawn('node', ['index.js'], {env: process.env, stdio: 'ignore'});
+   // await Promise.delay(30000);
     //await Promise.delay(5000);
   });
 
@@ -43,7 +44,7 @@ module.exports = (ctx) => {
 
     const timeAddress = await ctx.providers.main.contracts.ERC20Manager.methods.getTokenAddressBySymbol(ctx.providers.main.web3.utils.asciiToHex(config.sidechain.web3.symbol)).call();
     ctx.providers.main.contracts.ERC20Interface.options.address = timeAddress;
-    const timeBalance = await ctx.providers.main.contracts.ERC20Interface.methods.balanceOf(ctx.providers.main.address).call({to: timeAddress});
+    const timeBalance = await ctx.providers.main.contracts.ERC20Interface.methods.balanceOf(ctx.providers.main.address).call();
 
     if (parseInt(timeBalance) < 1000) {
 
@@ -71,11 +72,20 @@ module.exports = (ctx) => {
     }
 
 
+    const balanceSidechain = await ctx.providers.sidechain.web3.eth.getBalance(ctx.userWallet.address);
+
+    if(parseInt(balanceSidechain) < Math.pow(10, 19)){
+
+      await ctx.providers.sidechain.web3.eth.sendTransaction({
+        from: ctx.ownerWallet.address,
+        to: ctx.userWallet.address,
+        value: Math.pow(10, 19).toString()
+      })
+
+    }
 
 
   });
-
-
 
   it('lock 1000 tokens (mainnet)', async () => {
 
@@ -107,8 +117,6 @@ module.exports = (ctx) => {
       .fromPairs()
       .value();
 
-    console.log(args)
-
     await ctx.amqp.channel.publish('events', `${config.main.rabbit.serviceName}_chrono_sc.lock`, new Buffer(JSON.stringify({
       name: 'lock',
       payload: args
@@ -118,18 +126,15 @@ module.exports = (ctx) => {
 
   });
 
-
-/*
   it('transfer 1000 tokens (mainnet->sidechain)', async () => {
 
     await Promise.delay(10000);
 
-    const userAddress = `0x${ctx.userWallet.getAddress().toString('hex')}`;
-    const userPubKey = ctx.userWallet.getPublicKey().toString('hex');
-    const userPrivKey = ctx.userWallet.getPrivateKeyString();
+    const userWallet = Wallet.fromPrivateKey(Buffer.from(ctx.userWallet.privateKey.replace('0x', ''), 'hex'));
+    const userPubKey = userWallet.getPublicKey().toString('hex');
 
     const swapList = await request({
-      uri: `http://localhost:${config.rest.port}/mainnet/swaps/${userAddress}`,
+      uri: `http://localhost:${config.rest.port}/mainnet/swaps/${ctx.userWallet.address}`,
       json: true
     });
 
@@ -147,66 +152,66 @@ module.exports = (ctx) => {
       json: true
     });
 
-    const key = await EthCrypto.decryptWithPrivateKey(userPrivKey, keyEncoded);
+
+    const key = await EthCrypto.decryptWithPrivateKey(ctx.userWallet.privateKey, keyEncoded);
 
     expect(key).to.not.empty;
-    expect(userAddress).to.not.empty;
 
+    const web3 = ctx.providers.main.web3;
+    const contracts = ctx.providers.sidechain.contracts;
 
-    const platform = await config.sidechain.contracts.ChronoBankPlatform.deployed();
-    const tokenAddress = await platform.proxies(config.sidechain.web3.symbol);
+    const platform = contracts.ChronoBankPlatform;
 
-    const oldSidechainBalance = await config.sidechain.contracts.ERC20Interface.at(tokenAddress).balanceOf(userAddress);
+    contracts.ERC20Interface.options.address = await platform.methods.proxies(web3.utils.asciiToHex(config.sidechain.web3.symbol)).call();
 
-    const swapContract = await config.sidechain.contracts.AtomicSwapERC20.deployed();
-    const closeTx = await swapContract.close(swapid, key, {from: userAddress, gas: 5700000});
+    const oldSidechainBalance = await contracts.ERC20Interface.methods.balanceOf(ctx.userWallet.address).call();
 
-    const newSidechainBalance = await config.sidechain.contracts.ERC20Interface.at(tokenAddress).balanceOf(userAddress);
-    expect(newSidechainBalance.minus(oldSidechainBalance).toString()).to.eq('1000');
+    const closeTx = await contracts.AtomicSwapERC20.methods.close(web3.utils.asciiToHex(swapid), web3.utils.asciiToHex(key)).send({from: ctx.userWallet.address, gas: 5700000});
 
-    const closeEvent = _.find(closeTx.logs, {event: 'Close'});
+    const newSidechainBalance = await contracts.ERC20Interface.methods.balanceOf(ctx.userWallet.address).call();
+    expect(newSidechainBalance - oldSidechainBalance).to.eq(1000);
+
 
     await ctx.amqp.channel.publish('events', `${config.rabbit.serviceName}_chrono_sc.close`, new Buffer(JSON.stringify({
       name: 'close',
-      payload: closeEvent.args
+      payload: closeTx.events.Close.returnValues
     })));
+
 
 
   });
 
   it('burn 1000 tokens (sidechain)', async () => {
 
-    const userAddress = `0x${ctx.userWallet.getAddress().toString('hex')}`;
+    const contracts = ctx.providers.sidechain.contracts;
+    const web3 = ctx.providers.sidechain.web3;
 
-    const platform = await config.sidechain.contracts.ChronoBankPlatform.deployed();
-    const tokenAddress = await platform.proxies(config.sidechain.web3.symbol);
+    const platform = contracts.ChronoBankPlatform;
+    contracts.ERC20Interface.options.address = await platform.methods.proxies(web3.utils.asciiToHex(config.sidechain.web3.symbol)).call();
 
-    const oldSidechainBalance = await config.sidechain.contracts.ERC20Interface.at(tokenAddress).balanceOf(userAddress);
-
-    const revokeTx = await platform.revokeAsset(config.sidechain.web3.symbol, 1000, {from: userAddress, gas: 5700000});
-
-    const revokeEvent = _.find(revokeTx.logs, {event: 'Revoke'});
+    const oldSidechainBalance = await contracts.ERC20Interface.methods.balanceOf(ctx.userWallet.address).call();
+    const revokeTx = await platform.methods.revokeAsset(web3.utils.asciiToHex(config.sidechain.web3.symbol), 1000).send({from: ctx.userWallet.address, gas: 5700000});
 
     await ctx.amqp.channel.publish('events', `${config.sidechain.rabbit.serviceName}_chrono_sc.revoke`, new Buffer(JSON.stringify({
       name: 'revoke',
-      payload: revokeEvent.args
+      payload: revokeTx.events.Revoke.returnValues
     })));
 
-    const newSidechainBalance = await config.sidechain.contracts.ERC20Interface.at(tokenAddress).balanceOf(userAddress);
+    const newSidechainBalance = await contracts.ERC20Interface.methods.balanceOf(ctx.userWallet.address).call();
 
-    expect(oldSidechainBalance.minus(newSidechainBalance).toString()).to.eq('1000');
+
+    expect(oldSidechainBalance - newSidechainBalance).to.eq(1000);
   });
 
   it('transfer 1000 tokens (sidechain->mainnet)', async () => {
 
     await Promise.delay(10000);
 
-    const userAddress = `0x${ctx.userWallet.getAddress().toString('hex')}`;
-    const userPubKey = ctx.userWallet.getPublicKey().toString('hex');
-    const userPrivKey = ctx.userWallet.getPrivateKeyString();
+    const userWallet = Wallet.fromPrivateKey(Buffer.from(ctx.userWallet.privateKey.replace('0x', ''), 'hex'));
+    const userPubKey = userWallet.getPublicKey().toString('hex');
 
     const swapList = await request({
-      uri: `http://localhost:8081/sidechain/swaps/${userAddress}`,
+      uri: `http://localhost:8081/sidechain/swaps/${ctx.userWallet.address}`,
       json: true
     });
 
@@ -223,36 +228,38 @@ module.exports = (ctx) => {
       json: true
     });
 
-    const key = await EthCrypto.decryptWithPrivateKey(userPrivKey, keyEncoded);
-    const keyHash = sha3.sha3_256(key);
+    const contracts = ctx.providers.main.contracts;
+    const web3 = ctx.providers.main.web3;
+
+    const key = await EthCrypto.decryptWithPrivateKey(ctx.userWallet.privateKey, keyEncoded);
 
     expect(key).to.not.empty;
-    expect(userAddress).to.not.empty;
 
-    let erc20Manager = await config.main.contracts.ERC20Manager.deployed();
-    const timeAddress = await erc20Manager.getTokenAddressBySymbol(config.main.web3.symbol);
+    contracts.ERC20Interface.options.address = await contracts.ERC20Manager.methods.getTokenAddressBySymbol(web3.utils.asciiToHex(config.main.web3.symbol)).call();
+    console.log('symbol: ', contracts.ERC20Interface.options.address)
 
-    const oldBalance = await config.main.contracts.ERC20Interface.at(timeAddress).balanceOf(userAddress);
+    const oldBalance = await contracts.ERC20Interface.methods.balanceOf(ctx.userWallet.address).call();
 
-    const timeHolder = await config.main.contracts.TimeHolder.deployed();
-    console.log(swapid, key, keyHash);
-    const unlockTx = await timeHolder.unlockShares(swapid, key, {from: userAddress, gas: 5700000});
-
-   // const unlockTx = await timeHolder.unlockShares.call(swapid, `0x${keyHash}`, {from: userAddress, gas: 5700000});
-
+    const unlockTx = await contracts.TimeHolder.methods.unlockShares(web3.utils.asciiToHex(swapid), web3.utils.asciiToHex(key)).send({from: ctx.userWallet.address, gas: 5700000});
 
     expect(unlockTx).to.not.empty;
 
-    console.log(unlockTx);
+    console.log(unlockTx.events.UnlockShares);
 
-    const newBalance = await config.main.contracts.ERC20Interface.at(timeAddress).balanceOf(userAddress);
-
+    const newBalance = await contracts.ERC20Interface.methods.balanceOf(ctx.userWallet.address).call();
     console.log(oldBalance, newBalance)
 
-    expect(newBalance.minus(oldBalance).toString()).to.eq('1000');
+    const ownerBalance = await contracts.ERC20Interface.methods.balanceOf(ctx.ownerWallet.address).call();
+
+
+    console.log(ownerBalance)
+
+    console.log('user address', ctx.userWallet.address)
+
+    expect(newBalance - oldBalance).to.eq(1000);
   });
 
-*/
+
 
   after('kill environment', async () => {
     // ctx.blockProcessorPid.kill();
