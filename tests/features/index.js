@@ -236,23 +236,19 @@ module.exports = (ctx) => {
     expect(key).to.not.empty;
 
     contracts.ERC20Interface.options.address = await contracts.ERC20Manager.methods.getTokenAddressBySymbol(web3.utils.asciiToHex(config.main.web3.symbol)).call();
-    console.log('symbol: ', contracts.ERC20Interface.options.address)
 
+    const oldBalanceDeposit = await contracts.TimeHolder.methods.getDepositBalance(contracts.ERC20Interface.options.address, ctx.userWallet.address).call();
     const oldBalance = await contracts.ERC20Interface.methods.balanceOf(ctx.userWallet.address).call();
 
     const unlockTx = await contracts.TimeHolder.methods.unlockShares(web3.utils.asciiToHex(swapid), web3.utils.asciiToHex(key)).send({from: ctx.userWallet.address, gas: 5700000});
-
     expect(unlockTx).to.not.empty;
 
-    console.log(unlockTx.events.UnlockShares);
+    const newBalanceDeposit = await contracts.TimeHolder.methods.getDepositBalance(contracts.ERC20Interface.options.address, ctx.userWallet.address).call();
 
+    expect(newBalanceDeposit - oldBalanceDeposit).to.eq(1000);
+
+    await contracts.TimeHolder.methods.withdrawShares(contracts.ERC20Interface.options.address, 1000).send({from: ctx.userWallet.address, gas: 570000});
     const newBalance = await contracts.ERC20Interface.methods.balanceOf(ctx.userWallet.address).call();
-    console.log(oldBalance, newBalance)
-
-    const ownerBalance = await contracts.ERC20Interface.methods.balanceOf(ctx.ownerWallet.address).call();
-
-
-    console.log(ownerBalance)
 
     console.log('user address', ctx.userWallet.address)
 
