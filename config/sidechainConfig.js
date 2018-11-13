@@ -11,8 +11,6 @@
 require('dotenv').config();
 const path = require('path'),
   fs = require('fs'),
-  Wallet = require('ethereumjs-wallet'),
-  //contract = require('truffle-contract'),
   requireAll = require('require-all'),
   WalletProvider = require('../services/WalletProvider');
 
@@ -37,7 +35,9 @@ module.exports = {
     uri: process.env.SIDECHAIN_MONGO_URI || process.env.MONGO_URI || 'mongodb://localhost:27017/data',
     collectionPrefix: process.env.SIDECHAIN_MONGO_COLLECTION_PREFIX || process.env.MONGO_COLLECTION_PREFIX || 'eth_sidechain'
   },
-  contracts: contracts,
+  swap: {
+    expiration: process.env.SWAP_EXPIRATION ? parseInt(process.env.SWAP_EXPIRATION) :  120000,
+  },
   web3: {
     uri: web3Uri,
     symbol: process.env.SIDECHAIN_SYMBOL || 'TIME',

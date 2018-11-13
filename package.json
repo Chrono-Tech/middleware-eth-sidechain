@@ -24,7 +24,7 @@
     "lint": "node ./node_modules/eslint/bin/eslint.js -c .eslintrc.js --ext .js --fix --ignore-path .eslintignore .",
     "deploy:swap_contracts": "cd ./node_modules/chronobank-smart-contracts-atomic-swap && npm i &&  node --max_old_space_size=8000 ./node_modules/truffle/build/cli.bundled.js migrate",
     "deploy:contracts": "cd ./node_modules/chronobank-smart-contracts && npm i &&  node --max_old_space_size=8000 ./node_modules/truffle/build/cli.bundled.js migrate",
-    "test": "node ./node_modules/mocha/bin/mocha -t 900000 tests/index.js",
+    "test": "node ./node_modules/mocha/bin/mocha -t 1800000 tests/index.js",
     "migrate_red": "node ./node_modules/middleware_service.sdk/migrate.js run"
   },
   "author": "chronobank",

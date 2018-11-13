@@ -35,13 +35,8 @@ const Exchange = new mongoose.Schema({
     unique: true,
     required: true
   },
-  swapIdHash: {
-    type: String,
-    unique: true,
-    required: true
-  },
   created: {type: Date, required: true, default: Date.now},
-  isActive: {type: Boolean, required: true, default: true}
+  status: {type: Number, required: true, default: 0}
 });
 
 

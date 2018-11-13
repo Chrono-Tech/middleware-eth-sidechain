@@ -16,8 +16,8 @@ const config = require('../config'),
   //contract = require('truffle-contract'),
   path = require('path'),
   WalletProvider = require('../services/WalletProvider');
-/*  fuzzTests = require('./fuzz'),
-  performanceTests = require('./performance'),
+  fuzzTests = require('./fuzz'),
+  /*performanceTests = require('./performance'),
   blockTests = require('./blocks'),*/
   featuresTests = require('./features'),
   fs = require('fs-extra'),
@@ -92,12 +92,12 @@ describe('core/sidechain', function () {
   });
 
 
-  /*  describe('block', () => blockTests(ctx));
+  //  describe('block', () => blockTests(ctx));
 
     describe('fuzz', () => fuzzTests(ctx));
 
-    describe('performance', () => performanceTests(ctx));*/
+    ///describe('performance', () => performanceTests(ctx));*/
 
-  describe('features', () => featuresTests(ctx));
+  //describe('features', () => featuresTests(ctx));
 
 });

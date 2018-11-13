@@ -22,18 +22,6 @@ module.exports = (ctx) => {
     await models.exchangeModel.remove({});
     await models.sidechainExchangeModel.remove({});
 
-/*
-    config.main.contracts.ERC20Manager.setProvider(ctx.web3.main.currentProvider);
-    config.main.contracts.TimeHolder.setProvider(ctx.web3.main.currentProvider);
-    config.main.contracts.TimeHolderWallet.setProvider(ctx.web3.main.currentProvider);
-    config.main.contracts.ERC20Interface.setProvider(ctx.web3.main.currentProvider);
-
-    config.sidechain.contracts.ChronoBankPlatform.setProvider(ctx.web3.sidechain.currentProvider);
-    config.sidechain.contracts.ERC20Interface.setProvider(ctx.web3.sidechain.currentProvider);
-    config.sidechain.contracts.AtomicSwapERC20.setProvider(ctx.web3.sidechain.currentProvider);
-*/
-
-
    // ctx.sidechainPid = spawn('node', ['index.js'], {env: process.env, stdio: 'ignore'});
    // await Promise.delay(30000);
     //await Promise.delay(5000);
@@ -83,11 +71,11 @@ module.exports = (ctx) => {
       })
 
     }
-
-
   });
 
-  it('lock 1000 tokens (mainnet)', async () => {
+  it('lock 1000 tokens (mainnet) and kill nodes', async () => {
+
+    ctx.nodePid.kill();
 
     const timeAddress = await ctx.providers.main.contracts.ERC20Manager.methods.getTokenAddressBySymbol(ctx.providers.main.web3.utils.asciiToHex(config.sidechain.web3.symbol)).call();
     ctx.providers.main.contracts.ERC20Interface.options.address = timeAddress;
@@ -123,9 +111,22 @@ module.exports = (ctx) => {
     })));
 
     await Promise.delay(10000);
+  });
+
+  it('respawn node and validate that swap has been placed', async()=>{
+
+    ctx.nodePid = spawn('node', ['--max_old_space_size=4096', 'tests/node/nodesCluster.js'], {
+      env: process.env
+    });
+
+    await Promise.delay(10000);
+
+
 
   });
 
+
+/*
   it('transfer 1000 tokens (mainnet->sidechain)', async () => {
 
     await Promise.delay(10000);
@@ -250,9 +251,12 @@ module.exports = (ctx) => {
     await contracts.TimeHolder.methods.withdrawShares(contracts.ERC20Interface.options.address, 1000).send({from: ctx.userWallet.address, gas: 570000});
     const newBalance = await contracts.ERC20Interface.methods.balanceOf(ctx.userWallet.address).call();
 
+    console.log('user address', ctx.userWallet.address)
+
     expect(newBalance - oldBalance).to.eq(1000);
   });
 
+*/
 
 
   after('kill environment', async () => {
