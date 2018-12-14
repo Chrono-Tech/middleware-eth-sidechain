@@ -10,13 +10,12 @@
     "dotenv": "^4.0.0",
     "eth-crypto": "^1.0.0",
     "lodash": "^4.17.4",
-    "middleware_common_infrastructure": "^1.0.2",
-    "middleware_service.sdk": "github:chronobank/middleware-service-sdk",
+    "middleware_common_infrastructure": "github:ChronoBank/middleware-common-infrastructure.git",
+    "middleware-common-components": "github:ChronoBank/middleware-common-components",
     "mongoose": "^4.11.11",
     "mongoose-long": "^0.1.1",
     "net": "^1.0.2",
     "require-all": "^2.2.0",
-    "truffle-contract": "^3.0.4",
     "uniqid": "^4.1.1",
     "web3": "^1.0.0-beta.36"
   },
@@ -39,10 +38,7 @@
     "fs-extra": "^7.0.0",
     "ganache-cli": "^6.1.8",
     "mocha": "^3.5.0",
-    "npx": "^10.2.0",
     "request": "^2.85.0",
-    "request-promise": "^4.2.2",
-    "sha256": "^0.2.0",
-    "truffle": "^4.1.14"
+    "request-promise": "^4.2.2"
   }
 }

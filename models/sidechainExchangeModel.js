@@ -13,8 +13,6 @@
 const mongoose = require('mongoose'),
   config = require('../config');
 
-require('mongoose-long')(mongoose);
-
 /**
  * Account model definition
  * @param  {Object} obj Describes account's model

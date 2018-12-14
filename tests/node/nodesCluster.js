@@ -16,7 +16,7 @@ const Web3 = require('web3'),
   fs = require('fs-extra'),
   path = require('path'),
   _ = require('lodash'),
-  spawn = require('child_process').spawn,
+  {spawn, execSync} = require('child_process'),
   dbPathMain = path.join(__dirname, 'testrpc_main_db'),
   dbPathSidechain = path.join(__dirname, 'testrpc_sidechain_db'),
   TestRPC = require('ganache-cli');
@@ -90,37 +90,19 @@ const init = async () => {
   await fs.copy('tests/node/truffle.js', `${mainContractRoot}/truffle.js`);
 
 
-  //let npxPath = which.sync('npx');
-  let npxPath = require.resolve('npx');
-  npxPath = process.platform.includes('win') ? path.win32.normalize(npxPath) : path.normalize(npxPath);
-
-/*  spawn(trufflePath, ['v'], {
-    env: _.merge({TYPE: 1}, process.env),
-    stdio: 'inherit'
-  });*/
-
-  const mainContractDeployPid = spawn('node', [npxPath, '-c', `${process.platform.includes('win') ? 'truffle.cmd' : 'truffle'} migrate`], {
+  execSync(`npx -p node@8 ${process.platform.includes('win') ? 'truffle.cmd' : 'truffle'} migrate'}`, {
     env: _.merge({TYPE: 1}, process.env),
     stdio: 'inherit',
     cwd: mainContractRoot
   });
 
-  await new Promise(res =>
-    mainContractDeployPid.on('exit', res)
-  );
-
   await fs.copy('tests/node/truffle.js', `${sidechainContractRoot}/truffle.js`);
 
-  const sidechainContractDeployPid = spawn('node', [npxPath, '-c', `${process.platform.includes('win') ? 'truffle.cmd' : 'truffle'} migrate`], {
+  execSync(`npx ${process.platform.includes('win') ? 'truffle.cmd' : 'truffle'} migrate'}`, {
     env: _.merge({TYPE: 2}, process.env),
     stdio: 'inherit',
     cwd: sidechainContractRoot
   });
-
-  await new Promise(res =>
-    sidechainContractDeployPid.on('exit', res)
-  );
-
 
   console.log('preparing contracts...');
   const sidechainContracts = requireAll({

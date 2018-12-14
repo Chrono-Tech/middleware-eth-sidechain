@@ -13,8 +13,6 @@
 const mongoose = require('mongoose'),
   config = require('../config');
 
-require('mongoose-long')(mongoose);
-
 /**
  * Account model definition
  * @param  {Object} obj Describes account's model
@@ -35,9 +33,14 @@ const Exchange = new mongoose.Schema({
     unique: true,
     required: true
   },
+  txHash: {
+    type: String,
+    unique: true,
+    required: true
+  },
   created: {type: Date, required: true, default: Date.now},
   status: {type: Number, required: true, default: 0}
 });
 
 
-module.exports = ()=> mongoose.mainnet.model(`${config.main.mongo.collectionPrefix}Exchange`, Exchange);
+module.exports = ()=> mongoose.main.model(`${config.main.mongo.collectionPrefix}Exchange`, Exchange);

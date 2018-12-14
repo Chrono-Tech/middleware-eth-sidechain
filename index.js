@@ -5,63 +5,51 @@
  */
 
 /**
- * Expose an express web server
- * @module middleware-custom-service
+ * Middleware service for handling user balance.
+ * Update balances for accounts, which addresses were specified
+ * in received transactions from blockParser via amqp
+ *
+ * @module Chronobank/eth-balance-processor
+ * @requires config
+ * @requires models/accountModel
  */
 
 const config = require('./config'),
   mongoose = require('mongoose'),
   Promise = require('bluebird'),
-  path = require('path'),
   models = require('./models'),
+  _ = require('lodash'),
+  MainAMQPController = require('./controllers/mainAMQPController'),
+  mainProviderService = require('./services/main/providerService'),
   bunyan = require('bunyan'),
-  migrator = require('middleware_service.sdk').migrator,
-  AmqpService = require('middleware_common_infrastructure/AmqpService'),
-  InfrastructureInfo = require('middleware_common_infrastructure/InfrastructureInfo'),
-  InfrastructureService = require('middleware_common_infrastructure/InfrastructureService'),
-  log = bunyan.createLogger({name: 'core.rest'}),
-  redInitter = require('middleware_service.sdk').init;
+  log = bunyan.createLogger({name: 'core.balanceProcessor', level: config.logs.level});
+
 
 mongoose.Promise = Promise;
-mongoose.mainnet = mongoose.createConnection(config.main.mongo.uri);
-mongoose.sidechain = mongoose.createConnection(config.sidechain.mongo.uri);
+mongoose.main = mongoose.createConnection(config.main.mongo.uri, {useMongoClient: true});
+mongoose.sidechain = mongoose.createConnection(config.sidechain.mongo.uri, {useMongoClient: true});
 
-[mongoose.sidechain, mongoose.mainnet].forEach(instance =>
-  instance.on('disconnected', function () {
-    log.error('mongo disconnected!');
-    process.exit(0);
-  })
-);
 
-const runSystem = async function () {
-  const rabbit = new AmqpService(
-    config.systemRabbit.url,
-    config.systemRabbit.exchange,
-    config.systemRabbit.serviceName
-  );
-  const info = new InfrastructureInfo(require('./package.json'));
-  const system = new InfrastructureService(info, rabbit, {checkInterval: 10000});
-  await system.start();
-  system.on(system.REQUIREMENT_ERROR, (requirement, version) => {
-    log.error(`Not found requirement with name ${requirement.name} version=${requirement.version}.` +
-      ` Last version of this middleware=${version}`);
-    process.exit(1);
-  });
-  await system.checkRequirements();
-  system.periodicallyCheck();
-};
-
-const init = async () => {
-  if (config.checkSystem)
-    await runSystem();
+let init = async () => {
 
   models.init();
 
-  if (config.nodered.autoSyncMigrations)
-    await migrator.run(config, path.join(__dirname, 'migrations'));
+  mongoose.connection.on('disconnected', () => {
+    throw new Error('mongo disconnected!');
+  });
 
-  redInitter(config);
+  const mainAMQPController = new MainAMQPController();
 
+  mainAMQPController.on('error', ()=>{
+    throw new Error('rmq disconnected!');
+  });
+
+  await mainAMQPController.connect();
+
+  await mainProviderService.setRabbitmqChannel(mainAMQPController.channel, config.main.rabbit.serviceName);
 };
 
-module.exports = init();
+module.exports = init().catch(err => {
+  log.error(err);
+  process.exit(0);
+});

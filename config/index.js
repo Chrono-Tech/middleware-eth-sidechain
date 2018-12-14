@@ -10,59 +10,68 @@
  */
 require('dotenv').config();
 const path = require('path'),
-  mainConfig = require('./mainConfig'),
-  sidechainConfig = require('./sidechainConfig'),
-  web3 = require('web3'),
-  uniqid = require('uniqid'),
-  crypto = require('crypto'),
-  sha3 = require('js-sha3'),
-  EthCrypto = require('eth-crypto'),
-  mongoose = require('mongoose');
+  _ = require('lodash');
 
 let config = {
-  main: mainConfig,
-  sidechain: sidechainConfig,
-  rabbit: { //todo move
-    url: process.env.RABBIT_URI || 'amqp://localhost:5672',
-    serviceName: process.env.RABBIT_SERVICE_NAME || 'app_eth'
+  main: {
+    mongo: {
+      uri: process.env.MONGO_URI || 'mongodb://localhost:27017/data',
+      collectionPrefix: process.env.MONGO_COLLECTION_PREFIX || 'eth_mainnet'
+    },
+    rabbit: {
+      url: process.env.RABBIT_URI || 'amqp://localhost:5672',
+      serviceName: process.env.RABBIT_SERVICE_NAME || 'app_eth_mainnet'
+    },
+    contracts: {
+      path: process.env.SMART_CONTRACTS_PATH ? path.resolve(process.env.SMART_CONTRACTS_PATH) : path.resolve(__dirname, '../node_modules/chronobank-smart-contracts/build/contracts')
+    },
+    web3: {
+      uri: process.env.SIDEHCAIN_WEB3_URI || 'http://localhost:8545',
+      symbol: process.env.SYMBOL || 'TIME',
+      privateKey: process.env.ORACLE_PRIVATE_KEY,
+      providers: _.chain(process.env.PROVIDERS).split(',')
+        .map(provider => provider.trim())
+        .filter(provider => provider.length)
+        .thru(prov => prov.length ? prov : [
+          `${process.env.WEB3_URI || `/tmp/${(process.env.NETWORK || 'development')}/geth.ipc`}`
+        ])
+        .value()
+    }
+  },
+  sidechain: {
+    rabbit: {
+      url: process.env.SIDECHAIN_RABBIT_URI || process.env.RABBIT_URI || 'amqp://localhost:5672',
+      serviceName: process.env.SIDECHAIN_RABBIT_SERVICE_NAME || process.env.RABBIT_SERVICE_NAME || 'app_eth_sidechain'
+    },
+    mongo: {
+      uri: process.env.SIDECHAIN_MONGO_URI || process.env.MONGO_URI || 'mongodb://localhost:27017/data',
+      collectionPrefix: process.env.SIDECHAIN_MONGO_COLLECTION_PREFIX || process.env.MONGO_COLLECTION_PREFIX || 'eth_sidechain'
+    },
+    swap: {
+      expiration: process.env.SWAP_EXPIRATION ? parseInt(process.env.SWAP_EXPIRATION) : 120000
+    },
+    contracts: {
+      path: process.env.SMART_ATOMIC_CONTRACTS_PATH ? path.resolve(process.env.SMART_ATOMIC_CONTRACTS_PATH) : path.resolve(__dirname, '../node_modules/chronobank-smart-contracts/build/contracts')
+    },
+    web3: {
+      uri: process.env.SIDEHCAIN_WEB3_URI || 'http://localhost:8546',
+      symbol: process.env.SIDECHAIN_SYMBOL || 'TIME',
+      privateKey: process.env.SIDECHAIN_ORACLE_PRIVATE_KEY,
+      providers: _.chain(process.env.SIDECHAIN_PROVIDERS).split(',')
+        .map(provider => provider.trim())
+        .filter(provider => provider.length)
+        .thru(prov => prov.length ? prov : [
+          `${process.env.SIDECHAIN_WEB3_URI || `/tmp/${(process.env.SIDECHAIN_NETWORK || 'development')}/geth.ipc`}`
+        ])
+        .value()
+    }
   },
   rest: {
     domain: process.env.DOMAIN || 'localhost',
     port: parseInt(process.env.REST_PORT) || 8081
   },
-  nodered: {
-    mongo: {
-      uri: process.env.NODERED_MONGO_URI || process.env.MONGO_URI || 'mongodb://localhost:27017/data',
-      collectionPrefix: process.env.NODERED_MONGO_COLLECTION_PREFIX || ''
-    },
-    httpServer: parseInt(process.env.USE_HTTP_SERVER) || false,
-    httpAdminRoot: process.env.HTTP_ADMIN || false,
-    useLocalServer: true,
-    migrationsInOneFile: true,
-    useLocalStorage: true,
-    autoSyncMigrations: process.env.NODERED_AUTO_SYNC_MIGRATIONS || true,
-    customNodesDir: [path.join(__dirname, '../')],
-    migrationsDir: path.join(__dirname, '../migrations'),
-    functionGlobalContext: {
-      connections: {
-        primary: mongoose
-      },
-      libs: {
-        web3: web3,
-        sha3: sha3,
-        uniqid: uniqid,
-        crypto: crypto,
-        EthCrypto: EthCrypto
-      },
-      settings: {
-        main: mainConfig,
-        sidechain: sidechainConfig,
-        rabbit: { //todo move
-          url: process.env.RABBIT_URI || 'amqp://localhost:5672',
-          serviceName: process.env.RABBIT_SERVICE_NAME || 'app_eth'
-        }
-      }
-    }
+  logs: {
+    level: process.env.LOG_LEVEL || 'info'
   }
 };
 
