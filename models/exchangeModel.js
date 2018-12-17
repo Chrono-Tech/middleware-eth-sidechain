@@ -30,14 +30,14 @@ const Exchange = new mongoose.Schema({
     type: String,
     required: true
   },
-  swap_id: {
+  swapId: {
     type: String,
     unique: true,
     required: true
   },
   created: {type: Date, required: true, default: Date.now},
-  isActive: {type: Boolean, required: true, default: true}
+  status: {type: Number, required: true, default: 0}
 });
 
 
-module.exports = mongoose.mainnet.model(`${config.main.mongo.collectionPrefix}Exchange`, Exchange);
+module.exports = ()=> mongoose.mainnet.model(`${config.main.mongo.collectionPrefix}Exchange`, Exchange);

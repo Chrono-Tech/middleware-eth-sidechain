@@ -10,17 +10,21 @@
  */
 require('dotenv').config();
 const path = require('path'),
-  Wallet = require('ethereumjs-wallet'),
-  contract = require('truffle-contract'),
+  fs = require('fs'),
+  //Wallet = require('ethereumjs-wallet'),
   requireAll = require('require-all'),
-  WalletProvider = require('../services/WalletProvider'),
+  WalletProvider = require('../services/WalletProvider');
+
+let contracts = {};
+
+const contractDir = process.env.SMART_CONTRACTS_PATH ? path.resolve(process.env.SMART_CONTRACTS_PATH) : path.resolve(__dirname, '../node_modules/chronobank-smart-contracts/build/contracts');
+
+if(fs.existsSync(contractDir))
   contracts = requireAll({
-    dirname: process.env.SMART_CONTRACTS_PATH ? path.resolve(process.env.SMART_CONTRACTS_PATH) : path.resolve(__dirname, '../node_modules/chronobank-smart-contracts/build/contracts'),
-    resolve: Contract => contract(Contract)
+    dirname: contractDir
   });
 
 const web3Uri = process.env.WEB3_URI || 'http://localhost:8545';
-const wallet = Wallet.fromPrivateKey(Buffer.from(process.env.ORACLE_PRIVATE_KEY, 'hex'));
 
 module.exports = {
   mongo: {
@@ -33,8 +37,8 @@ module.exports = {
   },
   contracts: contracts,
   web3: {
-    wallet: wallet,
     uri: web3Uri,
-    provider: new WalletProvider(wallet, web3Uri)
+    symbol: process.env.SYMBOL || 'TIME',
+    provider: new WalletProvider(process.env.ORACLE_PRIVATE_KEY, web3Uri, contracts)
   }
 };

@@ -10,17 +10,21 @@
  */
 require('dotenv').config();
 const path = require('path'),
-  Wallet = require('ethereumjs-wallet'),
-  contract = require('truffle-contract'),
+  fs = require('fs'),
   requireAll = require('require-all'),
-  WalletProvider = require('../services/WalletProvider'),
+  WalletProvider = require('../services/WalletProvider');
+
+
+let contracts = {};
+
+const contractDir = process.env.SMART_ATOMIC_CONTRACTS_PATH ? path.resolve(process.env.SMART_ATOMIC_CONTRACTS_PATH) : path.resolve(__dirname, '../node_modules/chronobank-smart-contracts/build/contracts');
+
+if(fs.existsSync(contractDir))
   contracts = requireAll({
-    dirname: process.env.SMART_ATOMIC_CONTRACTS_PATH ? path.resolve(process.env.SMART_ATOMIC_CONTRACTS_PATH) : path.resolve(__dirname, '../node_modules/chronobank-smart-contracts/build/contracts'),
-    resolve: Contract => contract(Contract)
+    dirname: contractDir
   });
 
 const web3Uri = process.env.SIDEHCAIN_WEB3_URI || 'http://localhost:8546';
-const wallet = Wallet.fromPrivateKey(Buffer.from(process.env.SIDECHAIN_ORACLE_PRIVATE_KEY, 'hex'));
 
 module.exports = {
   rabbit: {
@@ -31,11 +35,12 @@ module.exports = {
     uri: process.env.SIDECHAIN_MONGO_URI || process.env.MONGO_URI || 'mongodb://localhost:27017/data',
     collectionPrefix: process.env.SIDECHAIN_MONGO_COLLECTION_PREFIX || process.env.MONGO_COLLECTION_PREFIX || 'eth_sidechain'
   },
-  contracts: contracts,
+  swap: {
+    expiration: process.env.SWAP_EXPIRATION ? parseInt(process.env.SWAP_EXPIRATION) :  120000,
+  },
   web3: {
-    wallet: wallet,
     uri: web3Uri,
     symbol: process.env.SIDECHAIN_SYMBOL || 'TIME',
-    provider: new WalletProvider(wallet, web3Uri)
+    provider: new WalletProvider(process.env.SIDECHAIN_ORACLE_PRIVATE_KEY, web3Uri, contracts)
   }
 };
