@@ -28,6 +28,7 @@ let config = {
     web3: {
       uri: process.env.SIDEHCAIN_WEB3_URI || 'http://localhost:8545',
       symbol: process.env.SYMBOL || 'TIME',
+      symbolAddress: process.env.SYMBOL_ADDRESS,
       privateKey: process.env.ORACLE_PRIVATE_KEY,
       providers: _.chain(process.env.PROVIDERS).split(',')
         .map(provider => provider.trim())
@@ -56,6 +57,7 @@ let config = {
     web3: {
       uri: process.env.SIDEHCAIN_WEB3_URI || 'http://localhost:8546',
       symbol: process.env.SIDECHAIN_SYMBOL || 'TIME',
+      symbolAddress: process.env.SIDECHAIN_SYMBOL_ADDRESS,
       privateKey: process.env.SIDECHAIN_ORACLE_PRIVATE_KEY,
       providers: _.chain(process.env.SIDECHAIN_PROVIDERS).split(',')
         .map(provider => provider.trim())
@@ -67,7 +69,6 @@ let config = {
     }
   },
   rest: {
-    domain: process.env.DOMAIN || 'localhost',
     port: parseInt(process.env.REST_PORT) || 8081
   },
   logs: {

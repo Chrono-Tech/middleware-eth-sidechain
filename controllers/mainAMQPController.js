@@ -24,7 +24,7 @@ class MainAMQPController extends EventEmitter {
     await this.channel.assertExchange('internal', 'topic', {durable: false});
     await this.channel.assertQueue(`${config.main.rabbit.serviceName}.sidechain`);
     await this.channel.bindQueue(`${config.main.rabbit.serviceName}.sidechain`, 'events', `${config.main.rabbit.serviceName}_chrono_sc.lock`);
-    this.channel.consume(`${config.main.rabbit.serviceName}.sidechain`, this._onLockEvent);
+    this.channel.consume(`${config.main.rabbit.serviceName}.sidechain`, this._onLockEvent.bind(this));
 
   }
 
@@ -40,9 +40,11 @@ class MainAMQPController extends EventEmitter {
     }
 
     try {
-      await openSwapService(parsedData.txHash, parsedData.value, parsedData.who);
+      console.log(parsedData)
+      await openSwapService(parsedData.info.tx, parsedData.payload.amount, parsedData.payload.who);
       this.channel.ack(data);
     } catch (e) {
+      console.log(e);
       return this.channel.nack(data);
     }
 

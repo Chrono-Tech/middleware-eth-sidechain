@@ -9,7 +9,8 @@ process.env.LOG_LEVEL = 'error';
 
 const config = require('../config'),
   models = require('../models'),
-  spawn = require('child_process').spawn,
+  {fork} = require('child_process'),
+  path = require('path'),
   Web3 = require('web3'),
   web3 = new Web3(),
   //fuzzTests = require('./fuzz'),
@@ -31,47 +32,36 @@ describe('core/sidechain', function () {
   before(async () => {
     models.init();
 
-    ctx.nodePid = spawn('node', ['--max_old_space_size=4096', 'tests/node/nodesCluster.js'], {
-      env: process.env
+/*    ctx.nodePid = fork(path.join(__dirname, 'node/nodesCluster.js'), {//todo uncomment
+      env: process.env,
+      stdio: 'inherit'
     });
 
 
     await new Promise(res => {
-      ctx.nodePid.stdout.on('data', (data) => {
-        data = data.toString();
-        console.log(data);
-        if (data.includes('sidechain token'))
+      ctx.nodePid.on('message', (message) => {
+        if (message.status)
           res();
       });
-    });
+    });*/
 
-    ctx.ownerWallet = web3.eth.accounts.privateKeyToAccount('0x6b9027372deb53f4ae973a5614d8a57024adf33126ece6b587d9e08ba901c0d2');
-    ctx.userWallet = web3.eth.accounts.create();
+
+    ctx.ownerWallet = web3.eth.accounts.privateKeyToAccount('0xfa76f1264b268a7900584fd845ae602affd05bf1a25687a788f8b851e507db34');
+    ctx.userWallet = web3.eth.accounts.privateKeyToAccount('0x0b225e8c97627cf9c13bec195c2cdba58715023105c8f67b020efa1d70ebd12b'); //todo replace with random
 
     ctx.web3 = {
-      main: new Web3(config.main.web3.providers[0]),
-      sidechain: new Web3(config.sidechain.web3.providers[0])
+      main: new Web3('http://localhost:8545'),
+      sidechain: new Web3('http://localhost:8546') //todo move to config
     };
-
-/*
-    ctx.providers = {
-      main: new WalletProvider(ctx.userWallet.privateKey, config.main.web3.uri, mainContracts),
-      sidechain: new WalletProvider(ctx.userWallet.privateKey, config.sidechain.web3.uri, sidechainContracts)
-    };
-
-    ctx.providers.main = await ctx.providers.main.getInstance();
-    ctx.providers.sidechain = await ctx.providers.sidechain.getInstance();
-*/
-
 
     ctx.amqp = {};
-    ctx.amqp.instance = await amqp.connect(config.rabbit.url);
+    ctx.amqp.instance = await amqp.connect(config.main.rabbit.url);
     ctx.amqp.channel = await ctx.amqp.instance.createChannel();
     await ctx.amqp.channel.assertExchange('events', 'topic', {durable: false});
 
 
     await Promise.delay(5000);
-    ctx.nodePid.kill();
+  //  ctx.nodePid.kill();
   });
 
   after(async () => {
@@ -84,9 +74,9 @@ describe('core/sidechain', function () {
 
   //  describe('block', () => blockTests(ctx));
 
-    //describe('fuzz', () => fuzzTests(ctx));
+  //describe('fuzz', () => fuzzTests(ctx));
 
-    ///describe('performance', () => performanceTests(ctx));*/
+  ///describe('performance', () => performanceTests(ctx));*/
 
   describe('features', () => featuresTests(ctx));
 

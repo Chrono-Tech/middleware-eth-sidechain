@@ -38,6 +38,11 @@ const Exchange = new mongoose.Schema({
     unique: true,
     required: true
   },
+  data: {
+    type: String,
+    //required: true
+  },
+  actions: {type: mongoose.Schema.Types.Mixed, default: []},
   created: {type: Date, required: true, default: Date.now},
   status: {type: Number, required: true, default: 0}
 });

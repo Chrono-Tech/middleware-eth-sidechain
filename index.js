@@ -19,8 +19,12 @@ const config = require('./config'),
   Promise = require('bluebird'),
   models = require('./models'),
   _ = require('lodash'),
+  express = require('express'),
+  bodyParser = require('body-parser'),
+  cors = require('cors'),
+  app = express(),
+  routes = require('./routes'),
   MainAMQPController = require('./controllers/mainAMQPController'),
-  mainProviderService = require('./services/main/providerService'),
   bunyan = require('bunyan'),
   log = bunyan.createLogger({name: 'core.balanceProcessor', level: config.logs.level});
 
@@ -46,7 +50,16 @@ let init = async () => {
 
   await mainAMQPController.connect();
 
-  await mainProviderService.setRabbitmqChannel(mainAMQPController.channel, config.main.rabbit.serviceName);
+
+  app.use(bodyParser.urlencoded({extended: false}));
+  app.use(bodyParser.json());
+
+  app.use(cors());
+  routes(app);
+
+  app.listen(config.rest.port, () => log.info(`Listening on port ${config.rest.port}!`));
+
+
 };
 
 module.exports = init().catch(err => {
