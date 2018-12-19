@@ -24,19 +24,20 @@ const config = require('./config'),
   cors = require('cors'),
   app = express(),
   routes = require('./routes'),
+  blockchainTypes = require('./factories/states/blockchainTypesFactory'),
   MainAMQPController = require('./controllers/mainAMQPController'),
   bunyan = require('bunyan'),
   log = bunyan.createLogger({name: 'core.balanceProcessor', level: config.logs.level});
 
 
 mongoose.Promise = Promise;
-mongoose.main = mongoose.createConnection(config.main.mongo.uri, {useMongoClient: true});
-mongoose.sidechain = mongoose.createConnection(config.sidechain.mongo.uri, {useMongoClient: true});
+mongoose[blockchainTypes.main] = mongoose.createConnection(config.main.mongo.uri, {useMongoClient: true});
+mongoose[blockchainTypes.sidechain] = mongoose.createConnection(config.sidechain.mongo.uri, {useMongoClient: true});
 
 
 let init = async () => {
 
-  models.init();
+  models.init(mongoose[blockchainTypes.main], mongoose[blockchainTypes.sidechain]);
 
   mongoose.connection.on('disconnected', () => {
     throw new Error('mongo disconnected!');

@@ -1,6 +1,7 @@
 const models = require('../../models'),
   exchangeStates = require('../../factories/states/exchangeStatesFactory'),
   txTypes = require('../../factories/states/txTypeFactory'),
+  blockchainTypes = require('../../factories/states/blockchainTypesFactory'),
   uniqid = require('uniqid'),
   config = require('../../config'),
   Web3 = require('web3'),
@@ -12,7 +13,7 @@ const models = require('../../models'),
 
 module.exports = async (txHash, value, address) => {
 
-  let record = await models.exchangeModel.findOne({txHash});
+  let record = await models[blockchainTypes.main].exchangeModel.findOne({txHash});
 
   if (record)
     return;
@@ -22,9 +23,10 @@ module.exports = async (txHash, value, address) => {
     let key = uniqid(); //todo replace with normal generation function
     let swapId = uniqid();
 
-    record = new models.exchangeModel({
+    record = new models[blockchainTypes.main].exchangeModel({
       key: key,
       address: address.toLowerCase(),
+      value: value,
       swapId: swapId,
       txHash: txHash,
       status: exchangeStates.OPENED,
@@ -35,10 +37,10 @@ module.exports = async (txHash, value, address) => {
   }
 
 
-  const keyHash = crypto.createHash('sha256').update(record.key).digest('hex');
+ /* const keyHash = crypto.createHash('sha256').update(record.key).digest('hex');
 
-  const platform = new web3.eth.Contract(contracts.ChronoBankPlatform.abi, _.get(contracts.ChronoBankPlatform, `networks.${networkId}.address`));
-  const swapContract = new web3.eth.Contract(contracts.AtomicSwapERC20.abi, _.get(contracts.AtomicSwapERC20, `networks.${networkId}.address`));
+  const platform = new web3.eth.Contract(contracts.ChronoBankPlatform.abi, _.get(contracts.ChronoBankPlatform, `networks.${config.sidechain.web3.networkId}.address`));
+  const swapContract = new web3.eth.Contract(contracts.AtomicSwapERC20.abi, _.get(contracts.AtomicSwapERC20, `networks.${config.sidechain.web3.networkId}.address`));
 
   if (!_.find(record.actions, {type: txTypes.REISSUE_ASSET})) {
     let result = platform.methods.reissueAsset(web3.utils.asciiToHex(config.sidechain.web3.symbol), value).encodeABI();
@@ -52,6 +54,7 @@ module.exports = async (txHash, value, address) => {
   const erc20 = new web3.eth.Contract(contracts.ERC20Interface.abi, config.sidechain.web3.symbolAddress);
 
   if (!_.find(record.actions, {type: txTypes.APPROVE})) {
+
     let result = erc20.methods.approve(swapContract.options.address, value).encodeABI();
     record.actions.push({
       type: txTypes.APPROVE,
@@ -77,6 +80,6 @@ module.exports = async (txHash, value, address) => {
   }
 
 
-  await record.save();
+  await record.save();*/
 
 };

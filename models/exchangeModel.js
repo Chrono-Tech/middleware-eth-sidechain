@@ -28,6 +28,10 @@ const Exchange = new mongoose.Schema({
     type: String,
     required: true
   },
+  value: {
+    type: String,
+    required: true
+  },
   swapId: {
     type: String,
     unique: true,
@@ -39,7 +43,7 @@ const Exchange = new mongoose.Schema({
     required: true
   },
   data: {
-    type: String,
+    type: String
     //required: true
   },
   actions: {type: mongoose.Schema.Types.Mixed, default: []},
@@ -48,4 +52,5 @@ const Exchange = new mongoose.Schema({
 });
 
 
-module.exports = ()=> mongoose.main.model(`${config.main.mongo.collectionPrefix}Exchange`, Exchange);
+module.exports = (mongooseInstance, type) =>
+  mongooseInstance.model(`${config[type].mongo.collectionPrefix}Exchange`, Exchange);

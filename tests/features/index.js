@@ -14,14 +14,18 @@ const config = require('../../config'),
   EthCrypto = require('eth-crypto'),
   expect = require('chai').expect,
   Promise = require('bluebird'),
+  blockchainTypes = require('../../factories/states/blockchainTypesFactory'),
   mainnetContracts = require('../../factories/sc/mainContractsFactory'),
   spawn = require('child_process').spawn;
 
 module.exports = (ctx) => {
 
   before(async () => {
-    await models.exchangeModel.remove({});
-    await models.sidechainExchangeModel.remove({});
+    await models[blockchainTypes.main].exchangeModel.remove({});
+    await models[blockchainTypes.main].txModel.remove({});
+
+    await models[blockchainTypes.sidechain].exchangeModel.remove({});
+    await models[blockchainTypes.sidechain].txModel.remove({});
 
     const networkId = await ctx.web3.main.eth.net.getId();
 
@@ -52,9 +56,24 @@ module.exports = (ctx) => {
     const timeBalance = await mainERC20.methods.balanceOf(ctx.userWallet.address).call();
 
     if (parseInt(timeBalance) < 1000) {
-      await mainERC20.methods.transfer(ctx.userWallet.address, 1000).send({
+      let txReceipt = await mainERC20.methods.transfer(ctx.userWallet.address, 1000).send({
         from: ctx.ownerWallet.address,
         gas: 570000
+      });
+
+      let tx = await ctx.web3.main.eth.getTransaction(txReceipt.transactionHash);
+
+      await models[blockchainTypes.main].txModel.create({
+        _id: tx.hash,
+        blockNumber: tx.blockNumber,
+        index: tx.index,
+        value: tx.value,
+        to: tx.to.toLowerCase(),
+        nonce: tx.nonce,
+        gasPrice: tx.gasPrice,
+        gas: tx.gas,
+        gasUsed: tx.gasUsed,
+        from: tx.from
       });
 
       const timeBalance = await mainERC20.methods.balanceOf(ctx.userWallet.address).call();
@@ -64,24 +83,55 @@ module.exports = (ctx) => {
 
     const balance = await ctx.web3.main.eth.getBalance(ctx.userWallet.address);
 
-    if (parseInt(balance) < Math.pow(10, 19))
-      await ctx.web3.main.eth.sendTransaction({
+    if (parseInt(balance) < Math.pow(10, 19)) {
+      let txReceipt = await ctx.web3.main.eth.sendTransaction({
         from: ctx.ownerWallet.address,
         to: ctx.userWallet.address,
         value: Math.pow(10, 19).toString()
       });
 
+      let tx = await ctx.web3.main.eth.getTransaction(txReceipt.transactionHash);
 
+      await models[blockchainTypes.main].txModel.create({
+        _id: tx.hash,
+        blockNumber: tx.blockNumber,
+        index: tx.index,
+        value: tx.value,
+        to: tx.to.toLowerCase(),
+        nonce: tx.nonce,
+        gasPrice: tx.gasPrice,
+        gas: tx.gas,
+        gasUsed: tx.gasUsed,
+        from: tx.from
+      });
+
+    }
 
     const balanceSidechain = await ctx.web3.sidechain.eth.getBalance(ctx.userWallet.address);
 
-    if (parseInt(balanceSidechain) < Math.pow(10, 19))
-      await ctx.web3.sidechain.eth.sendTransaction({
+    if (parseInt(balanceSidechain) < Math.pow(10, 19)) {
+      let txReceipt = await ctx.web3.sidechain.eth.sendTransaction({
         from: ctx.ownerWallet.address,
         to: ctx.userWallet.address,
         value: Math.pow(10, 19).toString()
-      })
+      });
 
+      let tx = await ctx.web3.sidechain.eth.getTransaction(txReceipt.transactionHash);
+
+      await models[blockchainTypes.sidechain].txModel.create({
+        _id: tx.hash,
+        blockNumber: tx.blockNumber,
+        index: tx.index,
+        value: tx.value,
+        to: tx.to.toLowerCase(),
+        nonce: tx.nonce,
+        gasPrice: tx.gasPrice,
+        gas: tx.gas,
+        gasUsed: tx.gasUsed,
+        from: tx.from
+      });
+
+    }
   });
 
   it('lock 1000 tokens (mainnet)', async () => {
@@ -97,34 +147,81 @@ module.exports = (ctx) => {
 
     const timeBalance = await mainERC20.methods.balanceOf(ctx.userWallet.address).call();
 
-    await mainERC20.methods.approve(_.get(mainnetContracts.TimeHolderWallet, `networks.${networkId}.address`), 1000).send({
+    let approveTxReceipt = await mainERC20.methods.approve(_.get(mainnetContracts.TimeHolderWallet, `networks.${networkId}.address`), 1000).send({
       from: ctx.userWallet.address,
       gas: 5700000
     });
 
-    console.log('before deposit')
+    let approveTx = await ctx.web3.main.eth.getTransaction(approveTxReceipt.transactionHash);
 
-    const depositTx = await mainTimeHolder.methods.deposit(mainTokenAddress, 1000).send({
+    await models[blockchainTypes.main].txModel.create({
+      _id: approveTx.hash,
+      blockNumber: approveTx.blockNumber,
+      index: approveTx.index,
+      value: approveTx.value,
+      to: approveTx.to.toLowerCase(),
+      nonce: approveTx.nonce,
+      gasPrice: approveTx.gasPrice,
+      gas: approveTx.gas,
+      gasUsed: approveTx.gasUsed,
+      from: approveTx.from
+    });
+
+    const depositTxReceipt = await mainTimeHolder.methods.deposit(mainTokenAddress, 1000).send({
       from: ctx.userWallet.address,
       gas: 5700000
     });
 
-    expect(depositTx.events.Deposit).to.not.be.empty;
+    expect(depositTxReceipt.events.Deposit).to.not.be.empty;
+
+
+    let depositTx = await ctx.web3.main.eth.getTransaction(depositTxReceipt.transactionHash);
+
+    await models[blockchainTypes.main].txModel.create({
+      _id: depositTx.hash,
+      blockNumber: depositTx.blockNumber,
+      index: depositTx.index,
+      value: depositTx.value,
+      to: depositTx.to.toLowerCase(),
+      nonce: depositTx.nonce,
+      gasPrice: depositTx.gasPrice,
+      gas: depositTx.gas,
+      gasUsed: depositTx.gasUsed,
+      from: depositTx.from
+    });
+
+
+
+
     const timeBalance2 = await mainERC20.methods.balanceOf(ctx.userWallet.address).call();
 
     expect(timeBalance - timeBalance2).to.eq(1000);
 
-    console.log('before lock')
-    const lockTx = await mainTimeHolder.methods.lock(mainTokenAddress, 1000).send({
+    const lockTxReceipt = await mainTimeHolder.methods.lock(mainTokenAddress, 1000).send({
       from: ctx.userWallet.address,
       gas: 5700000
     });
 
-    console.log(lockTx)
 
-    expect(lockTx.events.Lock).to.not.be.empty;
+    let lockTx = await ctx.web3.main.eth.getTransaction(lockTxReceipt.transactionHash);
 
-    let args = _.chain(lockTx.events.Lock.returnValues)
+    await models[blockchainTypes.main].txModel.create({
+      _id: lockTx.hash,
+      blockNumber: lockTx.blockNumber,
+      index: lockTx.index,
+      value: lockTx.value,
+      to: lockTx.to.toLowerCase(),
+      nonce: lockTx.nonce,
+      gasPrice: lockTx.gasPrice,
+      gas: lockTx.gas,
+      gasUsed: lockTx.gasUsed,
+      from: lockTx.from
+    });
+
+
+    expect(lockTxReceipt.events.Lock).to.not.be.empty;
+
+    let args = _.chain(lockTxReceipt.events.Lock.returnValues)
       .toPairs()
       .reject(pair => !!parseInt(pair[0]))
       .fromPairs()
@@ -132,8 +229,8 @@ module.exports = (ctx) => {
 
     await ctx.amqp.channel.publish('events', `${config.main.rabbit.serviceName}_chrono_sc.lock`, new Buffer(JSON.stringify({
       info: {
-        tx: lockTx.transactionHash,
-        blockNumber: lockTx.blockNumber
+        tx: lockTxReceipt.transactionHash,
+        blockNumber: lockTxReceipt.blockNumber
       },
       name: 'lock',
       payload: args
@@ -143,7 +240,7 @@ module.exports = (ctx) => {
 
   });
 
-  /*
+
   it('transfer 1000 tokens (mainnet->sidechain)', async () => {
 
     await Promise.delay(10000);
@@ -158,18 +255,23 @@ module.exports = (ctx) => {
 
     expect(swapList).to.not.be.empty;
 
+    console.log(swapList);
 
     const swapid = swapList[0].swapId;
 
-    const keyEncoded = await request({
+    const signature = await request({
       method: 'POST',
-      uri: `http://localhost:${config.rest.port}/mainnet/swaps/obtain/${swapid}`,
+      uri: `http://localhost:${config.rest.port}/mainnet/swaps/${swapid}/signature`,
       body: {
-        pubkey: userPubKey
+        //pubkey: userPubKey
+        txType: 2 //open
+
       },
       json: true
     });
 
+
+    console.log(signature);
 
     const key = await EthCrypto.decryptWithPrivateKey(ctx.userWallet.privateKey, keyEncoded);
 
@@ -198,9 +300,9 @@ module.exports = (ctx) => {
       payload: closeTx.events.Close.returnValues
     })));
 
-
   });
 
+  /*
   it('burn 1000 tokens (sidechain)', async () => {
 
     const contracts = ctx.providers.sidechain.contracts;

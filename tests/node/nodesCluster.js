@@ -105,8 +105,6 @@ const init = async () => {
 
   console.log('preparing contracts...');
 
-  console.log(path.join(__dirname, 'prepareContracts.js'));
-
   const pr = fork(path.join(__dirname, 'prepareContracts.js'), {stdio: 'inherit', env: process.env});
 
   await new Promise(res => {

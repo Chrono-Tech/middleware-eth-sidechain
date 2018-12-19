@@ -1,4 +1,5 @@
 const requireAll = require('require-all'),
+  blockchainTypes = require('../factories/states/blockchainTypesFactory'),
   models = requireAll({
     dirname: __dirname,
     filter: /(.+Model)\.js$/
@@ -9,10 +10,15 @@ const requireAll = require('require-all'),
  *
  */
 
-const init = () => {
+const init = (mainConnection, sidechainConnection) => {
 
-  for (let modelName of Object.keys(models))
-    ctx[modelName] = models[modelName]();
+  ctx[blockchainTypes.main] = {};
+  ctx[blockchainTypes.sidechain] = {};
+
+  for (let modelName of Object.keys(models)) {
+    ctx.main[modelName] = models[modelName](mainConnection, blockchainTypes.main);
+    ctx.sidechain[modelName] = models[modelName](sidechainConnection, blockchainTypes.sidechain);
+  }
 
 };
 

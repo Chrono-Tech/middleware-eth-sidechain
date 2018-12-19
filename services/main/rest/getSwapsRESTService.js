@@ -4,7 +4,8 @@
  * @author Egor Zuev <zyev.egor@gmail.com>
  */
 
-const exchangeModel = require('../../../models/exchangeModel'),
+const models = require('../../../models'),
+  blockchainTypes = require('../../../factories/states/blockchainTypesFactory'),
   _ = require('lodash');
 
 /**
@@ -16,7 +17,7 @@ const exchangeModel = require('../../../models/exchangeModel'),
  */
 module.exports = async (req, res) => {
 
-  let swaps = await exchangeModel.find({ //todo implement skip and limit
+  let swaps = await models[blockchainTypes.main].exchangeModel.find({ //todo implement skip and limit
     address: req.params.address.toLowerCase()
   });
 

@@ -26,17 +26,10 @@ let config = {
       path: process.env.SMART_CONTRACTS_PATH ? path.resolve(process.env.SMART_CONTRACTS_PATH) : path.resolve(__dirname, '../node_modules/chronobank-smart-contracts/build/contracts')
     },
     web3: {
-      uri: process.env.SIDEHCAIN_WEB3_URI || 'http://localhost:8545',
       symbol: process.env.SYMBOL || 'TIME',
       symbolAddress: process.env.SYMBOL_ADDRESS,
-      privateKey: process.env.ORACLE_PRIVATE_KEY,
-      providers: _.chain(process.env.PROVIDERS).split(',')
-        .map(provider => provider.trim())
-        .filter(provider => provider.length)
-        .thru(prov => prov.length ? prov : [
-          `${process.env.WEB3_URI || `/tmp/${(process.env.NETWORK || 'development')}/geth.ipc`}`
-        ])
-        .value()
+      networkId: process.env.NETWORK_ID || '4',
+      privateKey: process.env.ORACLE_PRIVATE_KEY//todo remove
     }
   },
   sidechain: {
@@ -52,20 +45,19 @@ let config = {
       expiration: process.env.SWAP_EXPIRATION ? parseInt(process.env.SWAP_EXPIRATION) : 120000
     },
     contracts: {
-      path: process.env.SMART_ATOMIC_CONTRACTS_PATH ? path.resolve(process.env.SMART_ATOMIC_CONTRACTS_PATH) : path.resolve(__dirname, '../node_modules/chronobank-smart-contracts/build/contracts')
+      path: process.env.SMART_ATOMIC_CONTRACTS_PATH ? path.resolve(process.env.SMART_ATOMIC_CONTRACTS_PATH) : path.resolve(__dirname, '../node_modules/chronobank-smart-contracts/build/contracts'),
+      actions: {
+        open: {
+          gas: process.env.SMART_ATOMIC_ACTION_OPEN_GAS || '350000',
+          gasPrice: process.env.SMART_ATOMIC_ACTION_OPEN_GAS_PRICE || '2000000000'
+        }
+      }
     },
     web3: {
-      uri: process.env.SIDEHCAIN_WEB3_URI || 'http://localhost:8546',
       symbol: process.env.SIDECHAIN_SYMBOL || 'TIME',
       symbolAddress: process.env.SIDECHAIN_SYMBOL_ADDRESS,
-      privateKey: process.env.SIDECHAIN_ORACLE_PRIVATE_KEY,
-      providers: _.chain(process.env.SIDECHAIN_PROVIDERS).split(',')
-        .map(provider => provider.trim())
-        .filter(provider => provider.length)
-        .thru(prov => prov.length ? prov : [
-          `${process.env.SIDECHAIN_WEB3_URI || `/tmp/${(process.env.SIDECHAIN_NETWORK || 'development')}/geth.ipc`}`
-        ])
-        .value()
+      networkId: process.env.SIDECHAIN_NETWORK_ID || '4',
+      privateKey: process.env.SIDECHAIN_ORACLE_PRIVATE_KEY //todo remove
     }
   },
   rest: {

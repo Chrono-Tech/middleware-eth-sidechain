@@ -40,7 +40,6 @@ class MainAMQPController extends EventEmitter {
     }
 
     try {
-      console.log(parsedData)
       await openSwapService(parsedData.info.tx, parsedData.payload.amount, parsedData.payload.who);
       this.channel.ack(data);
     } catch (e) {

@@ -20,6 +20,7 @@ const config = require('../config'),
   Promise = require('bluebird'),
   mongoose = require('mongoose'),
   amqp = require('amqplib'),
+  blockchainTypes = require('../factories/states/blockchainTypesFactory'),
   ctx = {};
 
 mongoose.Promise = Promise;
@@ -30,7 +31,7 @@ mongoose.sidechain = mongoose.createConnection(config.sidechain.mongo.uri);
 describe('core/sidechain', function () {
 
   before(async () => {
-    models.init();
+    models.init(mongoose[blockchainTypes.main], mongoose[blockchainTypes.sidechain]);
 
 /*    ctx.nodePid = fork(path.join(__dirname, 'node/nodesCluster.js'), {//todo uncomment
       env: process.env,
