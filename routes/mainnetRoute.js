@@ -5,13 +5,16 @@
  */
 
 const getSwapsRESTService = require('../services/main/rest/getSwapsRESTService'),
-  getSigRESTService = require('../services/main/rest/getSigRESTService'),
+  getSigOpenRESTService = require('../services/main/rest/getSigOpenRESTService'),
+  getSigKeyRESTService = require('../services/main/rest/getSigKeyRESTService'),
   logActionMiddleware = require('../middleware/logActionMiddleware');
 
 module.exports = (router) => {
 
   router.get('/swaps/:address', logActionMiddleware, getSwapsRESTService);
 
-  router.post('/swaps/:swap_id/signature', logActionMiddleware, getSigRESTService)
+  router.post('/swaps/:swap_id/signature/open', logActionMiddleware, getSigOpenRESTService);
+
+  router.post('/swaps/:swap_id/key', logActionMiddleware, getSigKeyRESTService);
 
 };

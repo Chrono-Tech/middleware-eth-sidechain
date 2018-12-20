@@ -48,11 +48,12 @@ describe('core/sidechain', function () {
 
 
     ctx.ownerWallet = web3.eth.accounts.privateKeyToAccount('0xfa76f1264b268a7900584fd845ae602affd05bf1a25687a788f8b851e507db34');
+    ctx.middlewareWallet = web3.eth.accounts.privateKeyToAccount('0xf0e8ee94da5df4839aaacc7d0e9f2a4455461622ec66334b669118b26460dd56');
     ctx.userWallet = web3.eth.accounts.privateKeyToAccount('0x0b225e8c97627cf9c13bec195c2cdba58715023105c8f67b020efa1d70ebd12b'); //todo replace with random
 
     ctx.web3 = {
       main: new Web3('http://localhost:8545'),
-      sidechain: new Web3('http://localhost:8546') //todo move to config
+      sidechain: new Web3('http://localhost:8546')
     };
 
     ctx.amqp = {};

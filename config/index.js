@@ -48,7 +48,7 @@ let config = {
       path: process.env.SMART_ATOMIC_CONTRACTS_PATH ? path.resolve(process.env.SMART_ATOMIC_CONTRACTS_PATH) : path.resolve(__dirname, '../node_modules/chronobank-smart-contracts/build/contracts'),
       actions: {
         open: {
-          gas: process.env.SMART_ATOMIC_ACTION_OPEN_GAS || '350000',
+          gas: process.env.SMART_ATOMIC_ACTION_OPEN_GAS || '30000',
           gasPrice: process.env.SMART_ATOMIC_ACTION_OPEN_GAS_PRICE || '2000000000'
         }
       }

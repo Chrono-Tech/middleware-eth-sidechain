@@ -9,32 +9,35 @@ module.exports = async (swapId, key, nonce, value, address) => {
 
   const keyHash = crypto.createHash('sha256').update(key).digest('hex');
 
-  const swapContract = new web3.eth.Contract(contracts.AtomicSwapERC20.abi, _.get(contracts.AtomicSwapERC20, `networks.${config.sidechain.web3.networkId}.address`));
+  const expiration = parseInt(((new Date()).getTime() + config.sidechain.swap.expiration) / 1000);
+
+  const swapContractAddress = _.get(contracts.AtomicSwapERC20, `networks.${config.sidechain.web3.networkId}.address`);
+  const swapContract = new web3.eth.Contract(contracts.AtomicSwapERC20.abi, swapContractAddress);
   let result = swapContract.methods.open(
     web3.utils.asciiToHex(swapId),
     value,
     config.sidechain.web3.symbolAddress,
     address,
     `0x${keyHash}`,
-    web3.utils.toHex(parseInt(((new Date()).getTime() + config.sidechain.swap.expiration) / 1000))
+    web3.utils.toHex(expiration)
   ).encodeABI();
 
-
   let tx = {
+    to: swapContractAddress,
     data : result,
-    chainId: config.sidechain.web3.networkId,
-    nonce: nonce,
+    chainId: web3.utils.numberToHex(config.sidechain.web3.networkId),
+    nonce: web3.utils.numberToHex(nonce),
     gas: web3.utils.toHex(config.sidechain.contracts.actions.open.gas),
     gasPrice: web3.utils.toHex(config.sidechain.contracts.actions.open.gasPrice)
   };
 
-  console.log(tx)
+  console.log()
 
   let signed = await web3.eth.accounts.signTransaction(tx, config.sidechain.web3.privateKey); //todo replace with call to sign service
 
-
   return {
     hash: signed.messageHash,
+    expiration: expiration,
     r: signed.r,
     s: signed.s,
     v: signed.v

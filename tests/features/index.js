@@ -12,10 +12,16 @@ const config = require('../../config'),
   Wallet = require('ethereumjs-wallet'),
   request = require('request-promise'),
   EthCrypto = require('eth-crypto'),
+  crypto = require('crypto'),
   expect = require('chai').expect,
+  RLP = require('eth-lib/lib/rlp'),
+  Nat = require('eth-lib/lib/nat'),
+  Bytes = require('eth-lib/lib/bytes'),
   Promise = require('bluebird'),
+  updateBlockchainCache = require('../utils/updateBlockchainCache'),
   blockchainTypes = require('../../factories/states/blockchainTypesFactory'),
   mainnetContracts = require('../../factories/sc/mainContractsFactory'),
+  sidechainContracts = require('../../factories/sc/sidechainCotractsFactory'),
   spawn = require('child_process').spawn;
 
 module.exports = (ctx) => {
@@ -34,9 +40,11 @@ module.exports = (ctx) => {
     let mainTokenAddress = await mainERC20Manager.methods.getTokenAddressBySymbol(ctx.web3.main.utils.asciiToHex(config.sidechain.web3.symbol)).call();
 
 
-    ctx.sidechainPid = spawn('node', ['index.js'], {env: _.merge({
+    ctx.sidechainPid = spawn('node', ['index.js'], {
+      env: _.merge({
         SYMBOL_ADDRESS: mainTokenAddress
-      }, process.env), stdio: 'inherit'});
+      }, process.env), stdio: 'inherit'
+    });
 
 
     // await Promise.delay(30000);
@@ -61,20 +69,7 @@ module.exports = (ctx) => {
         gas: 570000
       });
 
-      let tx = await ctx.web3.main.eth.getTransaction(txReceipt.transactionHash);
-
-      await models[blockchainTypes.main].txModel.create({
-        _id: tx.hash,
-        blockNumber: tx.blockNumber,
-        index: tx.index,
-        value: tx.value,
-        to: tx.to.toLowerCase(),
-        nonce: tx.nonce,
-        gasPrice: tx.gasPrice,
-        gas: tx.gas,
-        gasUsed: tx.gasUsed,
-        from: tx.from
-      });
+      await ctx.web3.main.eth.getTransaction(txReceipt.transactionHash);
 
       const timeBalance = await mainERC20.methods.balanceOf(ctx.userWallet.address).call();
       expect(parseInt(timeBalance)).to.be.gte(1000);
@@ -90,20 +85,7 @@ module.exports = (ctx) => {
         value: Math.pow(10, 19).toString()
       });
 
-      let tx = await ctx.web3.main.eth.getTransaction(txReceipt.transactionHash);
-
-      await models[blockchainTypes.main].txModel.create({
-        _id: tx.hash,
-        blockNumber: tx.blockNumber,
-        index: tx.index,
-        value: tx.value,
-        to: tx.to.toLowerCase(),
-        nonce: tx.nonce,
-        gasPrice: tx.gasPrice,
-        gas: tx.gas,
-        gasUsed: tx.gasUsed,
-        from: tx.from
-      });
+      await ctx.web3.main.eth.getTransaction(txReceipt.transactionHash);
 
     }
 
@@ -116,20 +98,7 @@ module.exports = (ctx) => {
         value: Math.pow(10, 19).toString()
       });
 
-      let tx = await ctx.web3.sidechain.eth.getTransaction(txReceipt.transactionHash);
-
-      await models[blockchainTypes.sidechain].txModel.create({
-        _id: tx.hash,
-        blockNumber: tx.blockNumber,
-        index: tx.index,
-        value: tx.value,
-        to: tx.to.toLowerCase(),
-        nonce: tx.nonce,
-        gasPrice: tx.gasPrice,
-        gas: tx.gas,
-        gasUsed: tx.gasUsed,
-        from: tx.from
-      });
+      await ctx.web3.sidechain.eth.getTransaction(txReceipt.transactionHash);
 
     }
   });
@@ -152,20 +121,7 @@ module.exports = (ctx) => {
       gas: 5700000
     });
 
-    let approveTx = await ctx.web3.main.eth.getTransaction(approveTxReceipt.transactionHash);
-
-    await models[blockchainTypes.main].txModel.create({
-      _id: approveTx.hash,
-      blockNumber: approveTx.blockNumber,
-      index: approveTx.index,
-      value: approveTx.value,
-      to: approveTx.to.toLowerCase(),
-      nonce: approveTx.nonce,
-      gasPrice: approveTx.gasPrice,
-      gas: approveTx.gas,
-      gasUsed: approveTx.gasUsed,
-      from: approveTx.from
-    });
+    await ctx.web3.main.eth.getTransaction(approveTxReceipt.transactionHash);
 
     const depositTxReceipt = await mainTimeHolder.methods.deposit(mainTokenAddress, 1000).send({
       from: ctx.userWallet.address,
@@ -175,23 +131,7 @@ module.exports = (ctx) => {
     expect(depositTxReceipt.events.Deposit).to.not.be.empty;
 
 
-    let depositTx = await ctx.web3.main.eth.getTransaction(depositTxReceipt.transactionHash);
-
-    await models[blockchainTypes.main].txModel.create({
-      _id: depositTx.hash,
-      blockNumber: depositTx.blockNumber,
-      index: depositTx.index,
-      value: depositTx.value,
-      to: depositTx.to.toLowerCase(),
-      nonce: depositTx.nonce,
-      gasPrice: depositTx.gasPrice,
-      gas: depositTx.gas,
-      gasUsed: depositTx.gasUsed,
-      from: depositTx.from
-    });
-
-
-
+    await ctx.web3.main.eth.getTransaction(depositTxReceipt.transactionHash);
 
     const timeBalance2 = await mainERC20.methods.balanceOf(ctx.userWallet.address).call();
 
@@ -203,23 +143,13 @@ module.exports = (ctx) => {
     });
 
 
-    let lockTx = await ctx.web3.main.eth.getTransaction(lockTxReceipt.transactionHash);
-
-    await models[blockchainTypes.main].txModel.create({
-      _id: lockTx.hash,
-      blockNumber: lockTx.blockNumber,
-      index: lockTx.index,
-      value: lockTx.value,
-      to: lockTx.to.toLowerCase(),
-      nonce: lockTx.nonce,
-      gasPrice: lockTx.gasPrice,
-      gas: lockTx.gas,
-      gasUsed: lockTx.gasUsed,
-      from: lockTx.from
-    });
-
+    await ctx.web3.main.eth.getTransaction(lockTxReceipt.transactionHash);
 
     expect(lockTxReceipt.events.Lock).to.not.be.empty;
+
+    await updateBlockchainCache(ctx.web3.main, models[blockchainTypes.main].txModel);
+    await updateBlockchainCache(ctx.web3.sidechain, models[blockchainTypes.sidechain].txModel);
+
 
     let args = _.chain(lockTxReceipt.events.Lock.returnValues)
       .toPairs()
@@ -245,9 +175,6 @@ module.exports = (ctx) => {
 
     await Promise.delay(10000);
 
-    const userWallet = Wallet.fromPrivateKey(Buffer.from(ctx.userWallet.privateKey.replace('0x', ''), 'hex'));
-    const userPubKey = userWallet.getPublicKey().toString('hex');
-
     const swapList = await request({
       uri: `http://localhost:${config.rest.port}/mainnet/swaps/${ctx.userWallet.address}`,
       json: true
@@ -255,36 +182,113 @@ module.exports = (ctx) => {
 
     expect(swapList).to.not.be.empty;
 
-    console.log(swapList);
+    const swapId = swapList[0].swapId;
 
-    const swapid = swapList[0].swapId;
+    const nonce = await ctx.web3.main.eth.getTransactionCount(ctx.middlewareWallet.address);
 
-    const signature = await request({
+    const payload = await request({
       method: 'POST',
-      uri: `http://localhost:${config.rest.port}/mainnet/swaps/${swapid}/signature`,
+      uri: `http://localhost:${config.rest.port}/mainnet/swaps/${swapId}/signature/open`,
       body: {
-        //pubkey: userPubKey
-        txType: 2 //open
+        nonce: nonce
+      },
+      json: true
+    });
 
+    const userWallet = Wallet.fromPrivateKey(Buffer.from(ctx.userWallet.privateKey.replace('0x', ''), 'hex'));
+    const userPubKey = userWallet.getPublicKey().toString('hex');
+
+    const encodedKey = await request({
+      method: 'POST',
+      uri: `http://localhost:${config.rest.port}/mainnet/swaps/${swapId}/key`,
+      body: {
+        pubKey: userPubKey
       },
       json: true
     });
 
 
-    console.log(signature);
+    const key = await EthCrypto.decryptWithPrivateKey(ctx.userWallet.privateKey, encodedKey);
+    const keyHash = crypto.createHash('sha256').update(key).digest('hex');
 
-    const key = await EthCrypto.decryptWithPrivateKey(ctx.userWallet.privateKey, keyEncoded);
+    const swapContractAddress = _.get(sidechainContracts.AtomicSwapERC20, `networks.${config.sidechain.web3.networkId}.address`);
+    const swapContract = new ctx.web3.main.eth.Contract(sidechainContracts.AtomicSwapERC20.abi, swapContractAddress);
 
-    expect(key).to.not.empty;
+    let result = swapContract.methods.open(
+      ctx.web3.main.utils.asciiToHex(swapId),
+      1000,
+      config.sidechain.web3.symbolAddress,
+      ctx.userWallet.address,
+      `0x${keyHash}`,
+      ctx.web3.main.utils.toHex(payload.expiration)
+    ).encodeABI();
 
-    const web3 = ctx.providers.main.web3;
+    let tx = {
+      to: swapContractAddress,
+      data: result,
+      chainId: config.sidechain.web3.networkId,
+      nonce: nonce,
+      gas: config.sidechain.contracts.actions.open.gas,
+      gasPrice: config.sidechain.contracts.actions.open.gasPrice
+    };
+
+    const signed = await ctx.web3.main.eth.accounts.signTransaction(tx, config.sidechain.web3.privateKey);
+
+    expect(signed.r).to.eq(payload.signature.r);
+    expect(signed.s).to.eq(payload.signature.s);
+    expect(signed.v).to.eq(payload.signature.v);
+
+
+    let rlpEncoded = RLP.encode([
+      Bytes.fromNat(tx.nonce),
+      Bytes.fromNat(tx.gasPrice),
+      Bytes.fromNat(tx.gas),
+      swapContractAddress,
+      Bytes.fromNat('0x'), //value
+      result,
+      Bytes.fromNat(tx.chainId),
+      '0x',
+      '0x']);
+
+    let rawTx = RLP.decode(rlpEncoded).slice(0, 6).concat([payload.signature.v, payload.signature.r, payload.signature.s]);
+
+    let makeEven = function (hex) { //todo move
+      if(hex.length % 2 === 1) {
+        hex = hex.replace('0x', '0x0');
+      }
+      return hex;
+    };
+
+    let trimLeadingZero = function (hex) { //todo move
+      while (hex && hex.startsWith('0x0')) {
+        hex = '0x' + hex.slice(3);
+      }
+      return hex;
+    };
+
+    rawTx[6] = makeEven(trimLeadingZero(rawTx[6]));
+    rawTx[7] = makeEven(trimLeadingZero(rawTx[7]));
+    rawTx[8] = makeEven(trimLeadingZero(rawTx[8]));
+
+    let rawTransaction = RLP.encode(rawTx);
+
+    expect(signed.rawTransaction).to.eq(rawTransaction);
+
+    let openTx = await ctx.web3.main.eth.sendSignedTransaction(rawTransaction);
+
+    expect(openTx.status).to.eq(true);
+
+    console.log(openTx);
+
+    return;
+
     const contracts = ctx.providers.sidechain.contracts;
 
-    const platform = contracts.ChronoBankPlatform;
+    const platform = sidechainContracts.ChronoBankPlatform;
 
-    contracts.ERC20Interface.options.address = await platform.methods.proxies(web3.utils.asciiToHex(config.sidechain.web3.symbol)).call();
+    contracts.ERC20Interface.options.address = await platform.methods.proxies(ctx.web3.sidechain.utils.asciiToHex(config.sidechain.web3.symbol)).call();
 
-    const oldSidechainBalance = await contracts.ERC20Interface.methods.balanceOf(ctx.userWallet.address).call();
+    const oldSidechainBalance = await sidechainContracts.ERC20Interface.methods.balanceOf(ctx.userWallet.address).call();
 
     const closeTx = await contracts.AtomicSwapERC20.methods.close(web3.utils.asciiToHex(swapid), web3.utils.asciiToHex(key)).send({
       from: ctx.userWallet.address,
