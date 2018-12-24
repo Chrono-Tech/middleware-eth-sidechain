@@ -10,7 +10,7 @@ module.exports = async (swapId, value, nonce) => { //todo use swap_id
   const platformAddress = _.get(contracts.ChronoBankPlatform, `networks.${config.sidechain.web3.networkId}.address`);
   const platform = new web3.eth.Contract(contracts.ChronoBankPlatform.abi, platformAddress);
 
-  let result = platform.methods.reissueAssetAtomicSwap(web3.utils.asciiToHex(swapId), web3.utils.asciiToHex(config.sidechain.web3.symbol), value).encodeABI();
+  let result = platform.methods.reissueAssetAtomicSwap(web3.utils.utf8ToHex(swapId), web3.utils.asciiToHex(config.sidechain.web3.symbol), value).encodeABI();
 
   let tx = {
     to: platformAddress,

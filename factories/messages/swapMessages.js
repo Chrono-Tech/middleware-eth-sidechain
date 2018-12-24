@@ -11,6 +11,6 @@ module.exports = {
   wrongTxType: {message: 'wrong tx type provided', status: 302},
   txOpenExecuted: {message: 'the swap has already been opened', status: 303},
   wrongParams: {message: 'wrong params', status: 304},
-  requestLimitReached: {message: 'request limit reached', status: 305}
-
+  requestLimitReached: {message: 'request limit reached', status: 305},
+  notReissued: {message: 'the reissue action hasn\'t been accomplished', status: 306}
 };

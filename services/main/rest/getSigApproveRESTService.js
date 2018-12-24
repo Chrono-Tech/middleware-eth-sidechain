@@ -5,12 +5,13 @@
  */
 
 const config = require('../../../config'),
+  crypto = require('crypto'),
   txTypes = require('../../../factories/states/txTypeFactory'),
   exchangeStates = require('../../../factories/states/exchangeStatesFactory'),
   swapMessages = require('../../../factories/messages/swapMessages'),
   blockchainTypes = require('../../../factories/states/blockchainTypesFactory'),
   models = require('../../../models'),
-  encodeABIOpenSwap = require('../../../utils/encode/sidechain/encodeABIOpenSwap'),
+  encodeABIApproveSwap = require('../../../utils/encode/sidechain/encodeABIApproveSwap'),
   _ = require('lodash');
 
 /**
@@ -20,58 +21,65 @@ const config = require('../../../config'),
  * @param res - response object
  * @return {Promise<*>}
  */
-module.exports = async (req, res) => {
+module.exports = async (req, res) => { //todo implement reserved->approved
 
   let swap = await models[blockchainTypes.main].exchangeModel.findOne({
     swapId: req.params.swap_id,
-    status: exchangeStates.APPROVED
+    status: exchangeStates.RESERVED
   });
 
   if (!swap)
     return res.send(swapMessages.swapNotFound);
 
-  if (swap.requested.amount >= config.sidechain.swap.requestLimit)
+  let reissueAction = _.find(swap.actions, {type: txTypes.REISSUE_ASSET});
+
+  if(!reissueAction || !reissueAction.txHash)
+    return res.send(swapMessages.notReissued);
+
+  if(swap.requested.amount >= config.sidechain.swap.requestLimit)
     return res.send(swapMessages.requestLimitReached);
+
 
   if (!_.has(req.body, 'nonce'))
     return res.send(swapMessages.wrongParams);
 
-  let openAction = _.find(swap.actions, {type: txTypes.OPEN});
+  let openAction = _.find(swap.actions, {type: txTypes.APPROVE});
 
-  let result = await encodeABIOpenSwap(swap.swapId, swap.key, req.body.nonce, swap.value, swap.address);
+  let result = await encodeABIApproveSwap(swap.value, req.body.nonce);
 
   if (openAction)
-    swap.actions = _.reject(swap.actions, {type: txTypes.OPEN});
+    swap.actions = _.reject(swap.actions, {type: txTypes.APPROVE});
 
   let action = {
-    type: txTypes.OPEN,
+    type: txTypes.APPROVE,
     signature: {
       r: result.r,
       s: result.s,
       v: result.v
     },
-    hash: result.hash,
-    expiration: result.expiration
+    hash: result.hash
   };
 
   swap.actions.push(action);
 
   if (swap.requested.nonce !== parseInt(req.body.nonce)) {
     swap.requested = {
+      status: exchangeStates.APPROVED,
       amount: swap.requested.amount + 1,
       nonce: parseInt(req.body.nonce)
     };
 
-    swap.status = exchangeStates.SWAP_OPENED;
+    swap.status = exchangeStates.APPROVED;
+
     await swap.save();
   }
 
+
   return res.send({
     signature: action.signature,
-    expiration: action.expiration,
     params: {
-      gas: config.sidechain.contracts.actions.open.gas,
-      gasPrice: config.sidechain.contracts.actions.open.gasPrice
+      gas: config.sidechain.contracts.actions.approve.gas,
+      gasPrice: config.sidechain.contracts.actions.approve.gasPrice
     }
   });
 

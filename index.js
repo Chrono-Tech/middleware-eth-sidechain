@@ -35,6 +35,8 @@ mongoose.set('useCreateIndex', true);
 mongoose[blockchainTypes.main] = mongoose.createConnection(config.main.mongo.uri, {useNewUrlParser: true});
 mongoose[blockchainTypes.sidechain] = mongoose.createConnection(config.sidechain.mongo.uri, {useNewUrlParser: true});
 
+//mongoose.set('debug', true); //todo remove
+
 
 let init = async () => {
 

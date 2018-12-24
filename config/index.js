@@ -49,12 +49,16 @@ let config = {
       path: process.env.SMART_ATOMIC_CONTRACTS_PATH ? path.resolve(process.env.SMART_ATOMIC_CONTRACTS_PATH) : path.resolve(__dirname, '../node_modules/chronobank-smart-contracts/build/contracts'),
       actions: {
         open: {
-          gas: process.env.SMART_ATOMIC_ACTION_OPEN_GAS || '30000',
+          gas: process.env.SMART_ATOMIC_ACTION_OPEN_GAS || '270000',
           gasPrice: process.env.SMART_ATOMIC_ACTION_OPEN_GAS_PRICE || '2000000000'
         },
         reissueAsset: {
-          gas: process.env.SMART_ATOMIC_ACTION_REISSUE_ASSET_GAS || '103000',
+          gas: process.env.SMART_ATOMIC_ACTION_REISSUE_ASSET_GAS || '110000',
           gasPrice: process.env.SMART_ATOMIC_ACTION_REISSUE_ASSET_GAS_PRICE || '2000000000'
+        },
+        approve: {
+          gas: process.env.SMART_ATOMIC_ACTION_APPROVE_GAS || '120000', //todo count real gas
+          gasPrice: process.env.SMART_ATOMIC_ACTION_APPROVE_GAS_PRICE || '2000000000'
         }
       }
     },

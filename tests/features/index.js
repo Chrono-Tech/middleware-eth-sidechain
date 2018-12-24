@@ -168,7 +168,6 @@ module.exports = (ctx) => {
 
   });
 
-
   it('obtain reissue tx and apply on network', async () => {
 
 
@@ -194,13 +193,13 @@ module.exports = (ctx) => {
       json: true
     });
 
-    console.log(payload);
-
-
     const platformAddress = _.get(sidechainContracts.ChronoBankPlatform, `networks.${config.sidechain.web3.networkId}.address`);
     const platform = new ctx.web3.sidechain.eth.Contract(sidechainContracts.ChronoBankPlatform.abi, platformAddress);
 
-    let result = platform.methods.reissueAssetAtomicSwap(ctx.web3.sidechain.utils.asciiToHex(swapId), ctx.web3.sidechain.utils.asciiToHex(config.sidechain.web3.symbol), 1000).encodeABI();
+    let result = platform.methods.reissueAssetAtomicSwap(ctx.web3.sidechain.utils.utf8ToHex(swapId), ctx.web3.sidechain.utils.asciiToHex(config.sidechain.web3.symbol), 1000).encodeABI();
+    let gas = await platform.methods.reissueAssetAtomicSwap(ctx.web3.sidechain.utils.utf8ToHex(swapId), ctx.web3.sidechain.utils.asciiToHex(config.sidechain.web3.symbol), 1000).estimateGas();
+
+    expect(gas).to.be.lte(parseInt(payload.params.gas));
 
     let tx = {
       to: platformAddress,
@@ -225,14 +224,12 @@ module.exports = (ctx) => {
     expect(reissueTx.status).to.eq(true);
 
     let decodedLogs = _.chain(reissueTx.logs).map(log => {
+
       const logDefinition = _.get(sidechainContracts.ChronoBankPlatform, `networks.${config.sidechain.web3.networkId}.events.${log.topics[0]}`);
       if (!logDefinition)
         return;
-      let params = ctx.web3.sidechain.eth.abi.decodeLog(logDefinition.inputs, log.data, log.topics);
 
-
-      if (logDefinition.name.toLowerCase() === 'issue')
-        params.swap = swapId; //todo remove
+      let params = ctx.web3.sidechain.eth.abi.decodeLog(logDefinition.inputs, log.data, logDefinition.anonymous ? log.topics : _.tail(log.topics));
 
       return {
         name: logDefinition.name,
@@ -245,9 +242,100 @@ module.exports = (ctx) => {
 
     }).compact().value();
 
+    for (let log of decodedLogs)
+      await ctx.amqp.channel.publish('events', `${config.sidechain.rabbit.serviceName}_chrono_sc.${log.name.toLowerCase()}`, Buffer.from(JSON.stringify({
+        info: {
+          tx: log.txHash,
+          blockNumber: log.blockNumber
+        },
+        name: log.name.toLowerCase(),
+        payload: log.params
+      })));
+
+    await Promise.delay(10000);
+
+  });
+
+
+  it('obtain approve tx and apply on network', async () => {
+
+    const swapList = await request({
+      uri: `http://localhost:${config.rest.port}/mainnet/swaps/${ctx.userWallet.address}`,
+      json: true
+    });
+
+    expect(swapList).to.not.be.empty;
+
+    const swapId = swapList[0].swapId;
+
+    const nonce = await ctx.web3.sidechain.eth.getTransactionCount(ctx.middlewareWallet.address);
+
+    const payload = await request({
+      method: 'POST',
+      uri: `http://localhost:${config.rest.port}/mainnet/swaps/${swapId}/signature/approve`,
+      body: {
+        nonce: nonce
+      },
+      json: true
+    });
+
+
+    console.log(payload)
+
+    const swapContractAddress = _.get(sidechainContracts.AtomicSwapERC20, `networks.${config.sidechain.web3.networkId}.address`);
+    const erc20 = new ctx.web3.sidechain.eth.Contract(sidechainContracts.ERC20Interface.abi, config.sidechain.web3.symbolAddress);
+    let result = erc20.methods.approve(swapContractAddress, 1000).encodeABI();
+    let gas = await erc20.methods.approve(swapContractAddress, 1000).estimateGas();
+
+    expect(gas).to.be.lte(parseInt(payload.params.gas));
+
+
+    let tx = {
+      to: config.sidechain.web3.symbolAddress,
+      data: result,
+      chainId: config.sidechain.web3.networkId,
+      nonce: nonce,
+      gas: payload.params.gas,
+      gasPrice: payload.params.gasPrice
+    };
+
+    const signed = await ctx.web3.sidechain.eth.accounts.signTransaction(tx, config.sidechain.web3.privateKey);
+
+
+    expect(signed.r).to.eq(payload.signature.r);
+    expect(signed.s).to.eq(payload.signature.s);
+    expect(signed.v).to.eq(payload.signature.v);
+
+    let rawTx = transformTxToRaw(tx, payload.signature);
+
+    let approveTx = await ctx.web3.sidechain.eth.sendSignedTransaction(rawTx);
+
+    expect(approveTx.status).to.eq(true);
+
+    let decodedLogs = _.chain(approveTx.logs).map(log => {
+      const logDefinition = _.find(sidechainContracts.ERC20Interface.abi, {name: 'Approval', type: 'event'});
+      if (!logDefinition)
+        return;
+
+      let params = ctx.web3.sidechain.eth.abi.decodeLog(logDefinition.inputs, log.data, log.topics);
+
+      if (logDefinition.name.toLowerCase() === 'approval')
+
+        return {
+          name: logDefinition.name,
+          txHash: log.transactionHash,
+          blockNumber: log.blockNumber,
+          params: _.chain(params).toPairs().reject(pair => {
+            return !isNaN(parseInt(pair[0])) || pair[0].indexOf('_') === 0
+          }).fromPairs().value()
+        };
+
+    }).compact().value();
+
+    console.log(decodedLogs);
 
     for (let log of decodedLogs)
-      await ctx.amqp.channel.publish('events', `${config.sidechain.rabbit.serviceName}_chrono_sc.${log.name.toLowerCase()}`, new Buffer(JSON.stringify({
+      await ctx.amqp.channel.publish('events', `${config.sidechain.rabbit.serviceName}_chrono_sc.${log.name.toLowerCase()}`, Buffer.from(JSON.stringify({
         info: {
           tx: log.txHash,
           blockNumber: log.blockNumber
@@ -314,13 +402,28 @@ module.exports = (ctx) => {
     ).encodeABI();
 
 
+    console.log('before')
+    let gas = await swapContract.methods.open(
+      ctx.web3.sidechain.utils.asciiToHex(swapId),
+      1000,
+      config.sidechain.web3.symbolAddress,
+      ctx.userWallet.address,
+      `0x${keyHash}`,
+      ctx.web3.sidechain.utils.toHex(payload.expiration)
+    ).estimateGas({from: ctx.middlewareWallet.address});
+
+    console.log(gas, payload.params.gas);
+    expect(gas).to.be.lte(parseInt(payload.params.gas));
+
+
+
     let tx = {
       to: swapContractAddress,
       data: result,
       chainId: config.sidechain.web3.networkId,
       nonce: nonce,
-      gas: config.sidechain.contracts.actions.open.gas,
-      gasPrice: config.sidechain.contracts.actions.open.gasPrice
+      gas: payload.params.gas,
+      gasPrice: payload.params.gasPrice
     };
 
     const signed = await ctx.web3.sidechain.eth.accounts.signTransaction(tx, config.sidechain.web3.privateKey);
@@ -335,7 +438,6 @@ module.exports = (ctx) => {
     expect(signed.rawTransaction).to.eq(rawTransaction);
 
 
-    return;
 
     let openTx = await ctx.web3.sidechain.eth.sendSignedTransaction(rawTransaction);
 
@@ -359,12 +461,15 @@ module.exports = (ctx) => {
     expect(newSidechainBalance - oldSidechainBalance).to.eq(1000);
 
 
-    await ctx.amqp.channel.publish('events', `${config.rabbit.serviceName}_chrono_sc.close`, new Buffer(JSON.stringify({
+/*
+    await ctx.amqp.channel.publish('events', `${config.sidechain.rabbit.serviceName}_chrono_sc.close`, new Buffer(JSON.stringify({
       name: 'close',
       payload: closeTx.events.Close.returnValues
     })));
+*/
 
   });
+
 
   /*
   it('burn 1000 tokens (sidechain)', async () => {

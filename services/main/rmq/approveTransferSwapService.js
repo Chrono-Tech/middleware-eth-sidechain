@@ -1,24 +1,30 @@
 const models = require('../../../models'),
   Web3 = require('web3'),
   web3 = new Web3(),
+  config = require('../../../config'),
   txTypes = require('../../../factories/states/txTypeFactory'),
   exchangeStates = require('../../../factories/states/exchangeStatesFactory'),
   blockchainTypes = require('../../../factories/states/blockchainTypesFactory'),
   _ = require('lodash');
 
 
-module.exports = async (txHash, swapId) => {
+module.exports = async (txHash, from, spender, value) => {
 
-  let decodedSwapId = web3.utils.hexToAscii(swapId).replace(/\0.*$/g,'');
+  let account = web3.accounts.privateKeyToAccount(config.sidechain.web3.privateKey);
 
-  let record = await models[blockchainTypes.main].exchangeModel.findOne({swapId: decodedSwapId});
+  if(from.toLowerCase() !== account.address.toLowerCase())
+    return;
+
+  let record = await models[blockchainTypes.main].exchangeModel.findOne({
+    value: value //todo fix - ask to provide swap id or other stuff
+  });
 
   if (!record)
     return;
 
-  let reissueAction = _.find(record.actions, {type: txTypes.REISSUE_ASSET});
+  let approveAction = _.find(record.actions, {type: txTypes.APPROVE});
 
-  if (_.has(reissueAction, 'txHash'))
+  if (_.has(approveAction, 'txHash'))
     return;
 
   if (reissueAction) {
@@ -26,7 +32,7 @@ module.exports = async (txHash, swapId) => {
   } else {
     record.actions.push({
       txHash: txHash,
-      type: txTypes.REISSUE_ASSET
+      type: txTypes.APPROVE
     });
   }
 

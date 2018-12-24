@@ -31,7 +31,7 @@ module.exports = async (req, res) => {
   if (!swap)
     return res.send(swapMessages.swapNotFound);
 
-  if(swap.requested.amount >= config.sidechain.swap.requestLimit)
+  if (swap.requested.amount >= config.sidechain.swap.requestLimit)
     return res.send(swapMessages.requestLimitReached);
 
 
@@ -62,6 +62,7 @@ module.exports = async (req, res) => {
       amount: swap.requested.amount + 1,
       nonce: parseInt(req.body.nonce)
     };
+    swap.status = exchangeStates.RESERVED;
     await swap.save();
   }
 
