@@ -24,8 +24,9 @@ const config = require('../config'),
   ctx = {};
 
 mongoose.Promise = Promise;
-mongoose.main = mongoose.createConnection(config.main.mongo.uri);
-mongoose.sidechain = mongoose.createConnection(config.sidechain.mongo.uri);
+mongoose.set('useCreateIndex', true);
+mongoose.main = mongoose.createConnection(config.main.mongo.uri, {useNewUrlParser: true});
+mongoose.sidechain = mongoose.createConnection(config.sidechain.mongo.uri, {useNewUrlParser: true});
 
 
 describe('core/sidechain', function () {
@@ -33,18 +34,18 @@ describe('core/sidechain', function () {
   before(async () => {
     models.init(mongoose[blockchainTypes.main], mongoose[blockchainTypes.sidechain]);
 
-/*    ctx.nodePid = fork(path.join(__dirname, 'node/nodesCluster.js'), {//todo uncomment
-      env: process.env,
-      stdio: 'inherit'
-    });
+    /*    ctx.nodePid = fork(path.join(__dirname, 'node/nodesCluster.js'), {//todo uncomment
+          env: process.env,
+          stdio: 'inherit'
+        });
 
 
-    await new Promise(res => {
-      ctx.nodePid.on('message', (message) => {
-        if (message.status)
-          res();
-      });
-    });*/
+        await new Promise(res => {
+          ctx.nodePid.on('message', (message) => {
+            if (message.status)
+              res();
+          });
+        });*/
 
 
     ctx.ownerWallet = web3.eth.accounts.privateKeyToAccount('0xfa76f1264b268a7900584fd845ae602affd05bf1a25687a788f8b851e507db34');
@@ -63,7 +64,7 @@ describe('core/sidechain', function () {
 
 
     await Promise.delay(5000);
-  //  ctx.nodePid.kill();
+    //  ctx.nodePid.kill();
   });
 
   after(async () => {

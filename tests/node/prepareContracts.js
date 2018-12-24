@@ -48,7 +48,7 @@ const init = async () => {
 
   let gas = await platform.methods.addAssetPartOwner(mainnetWeb3.utils.asciiToHex(sidechainSymbol), middlewareAddress).estimateGas({from: ownerAddress});
 
-  platform.methods.addAssetPartOwner(mainnetWeb3.utils.asciiToHex(sidechainSymbol), middlewareAddress).send({
+  await platform.methods.addAssetPartOwner(mainnetWeb3.utils.asciiToHex(sidechainSymbol), middlewareAddress).send({
     gas: gas,
     from: ownerAddress
   });

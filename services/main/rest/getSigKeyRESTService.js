@@ -22,7 +22,7 @@ module.exports = async (req, res) => {
 
   let swap = await models[blockchainTypes.main].exchangeModel.findOne({
     swapId: req.params.swap_id,
-    status: exchangeStates.OPENED
+    status: {$ne: exchangeStates.CLOSED}
   });
 
   if (!swap)

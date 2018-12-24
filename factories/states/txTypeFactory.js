@@ -1,5 +1,5 @@
 module.exports = {
-  REISSUE_ASSET: 0,
-  APPROVE: 1,
+  LOCKED: 0,
+  REISSUE_ASSET: 1,
   OPEN: 2
 };

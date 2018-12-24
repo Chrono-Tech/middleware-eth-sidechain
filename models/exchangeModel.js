@@ -18,7 +18,7 @@ const mongoose = require('mongoose'),
  * @param  {Object} obj Describes account's model
  * @return {Object} Model's object
  */
-const Exchange = new mongoose.Schema({
+const Exchange = new mongoose.Schema({ //todo add request limit by operation and nonce
   key: {
     type: String,
     unique: true,
@@ -32,21 +32,19 @@ const Exchange = new mongoose.Schema({
     type: String,
     required: true
   },
+  requested: {
+    amount: {type: Number, required: true, default: 0},
+    nonce: {type: Number, required: true, default: -1}
+  },
   swapId: {
     type: String,
     unique: true,
     required: true
   },
-  txHash: {
-    type: String,
-    unique: true,
-    required: true
-  },
-  data: {
-    type: String
-    //required: true
-  },
-  actions: {type: mongoose.Schema.Types.Mixed, default: []},
+  actions: [{
+    txHash: {type: String, unique: true},
+    type: {type: Number}
+  }],
   created: {type: Date, required: true, default: Date.now},
   status: {type: Number, required: true, default: 0}
 });

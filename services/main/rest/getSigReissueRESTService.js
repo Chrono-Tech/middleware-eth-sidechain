@@ -11,7 +11,7 @@ const config = require('../../../config'),
   swapMessages = require('../../../factories/messages/swapMessages'),
   blockchainTypes = require('../../../factories/states/blockchainTypesFactory'),
   models = require('../../../models'),
-  encodeABIOpenSwap = require('../../../utils/encode/sidechain/encodeABIOpenSwap'),
+  encodeABIReissueSwap = require('../../../utils/encode/sidechain/encodeABIReissueSwap'),
   _ = require('lodash');
 
 /**
@@ -25,7 +25,7 @@ module.exports = async (req, res) => {
 
   let swap = await models[blockchainTypes.main].exchangeModel.findOne({
     swapId: req.params.swap_id,
-    status: exchangeStates.RESERVED
+    status: exchangeStates.OPENED
   });
 
   if (!swap)
@@ -34,25 +34,25 @@ module.exports = async (req, res) => {
   if(swap.requested.amount >= config.sidechain.swap.requestLimit)
     return res.send(swapMessages.requestLimitReached);
 
+
   if (!_.has(req.body, 'nonce'))
     return res.send(swapMessages.wrongParams);
 
-  let openAction = _.find(swap.actions, {type: txTypes.OPEN});
+  let openAction = _.find(swap.actions, {type: txTypes.REISSUE_ASSET});
 
-  let result = await encodeABIOpenSwap(swap.swapId, swap.key, req.body.nonce, swap.value, swap.address);
+  let result = await encodeABIReissueSwap(swap.swapId, swap.value, req.body.nonce);
 
   if (openAction)
-    swap.actions = _.reject(swap.actions, {type: txTypes.OPEN});
+    swap.actions = _.reject(swap.actions, {type: txTypes.REISSUE_ASSET});
 
   let action = {
-    type: txTypes.OPEN,
+    type: txTypes.REISSUE_ASSET,
     signature: {
       r: result.r,
       s: result.s,
       v: result.v
     },
-    hash: result.hash,
-    expiration: result.expiration
+    hash: result.hash
   };
 
   swap.actions.push(action);
@@ -65,12 +65,12 @@ module.exports = async (req, res) => {
     await swap.save();
   }
 
+
   return res.send({
     signature: action.signature,
-    expiration: action.expiration,
     params: {
-      gas: config.sidechain.contracts.actions.open.gas,
-      gasPrice: config.sidechain.contracts.actions.open.gasPrice
+      gas: config.sidechain.contracts.actions.reissueAsset.gas,
+      gasPrice: config.sidechain.contracts.actions.reissueAsset.gasPrice
     }
   });
 

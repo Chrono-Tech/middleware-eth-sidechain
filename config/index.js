@@ -42,7 +42,8 @@ let config = {
       collectionPrefix: process.env.SIDECHAIN_MONGO_COLLECTION_PREFIX || process.env.MONGO_COLLECTION_PREFIX || 'eth_sidechain'
     },
     swap: {
-      expiration: process.env.SWAP_EXPIRATION ? parseInt(process.env.SWAP_EXPIRATION) : 120000
+      expiration: process.env.SWAP_EXPIRATION ? parseInt(process.env.SWAP_EXPIRATION) : 120000,
+      requestLimit: process.env.SWAP_REQUEST_LIMIT ? parseInt(process.env.SWAP_REQUEST_LIMIT) : 3,
     },
     contracts: {
       path: process.env.SMART_ATOMIC_CONTRACTS_PATH ? path.resolve(process.env.SMART_ATOMIC_CONTRACTS_PATH) : path.resolve(__dirname, '../node_modules/chronobank-smart-contracts/build/contracts'),
@@ -50,6 +51,10 @@ let config = {
         open: {
           gas: process.env.SMART_ATOMIC_ACTION_OPEN_GAS || '30000',
           gasPrice: process.env.SMART_ATOMIC_ACTION_OPEN_GAS_PRICE || '2000000000'
+        },
+        reissueAsset: {
+          gas: process.env.SMART_ATOMIC_ACTION_REISSUE_ASSET_GAS || '103000',
+          gasPrice: process.env.SMART_ATOMIC_ACTION_REISSUE_ASSET_GAS_PRICE || '2000000000'
         }
       }
     },

@@ -1,4 +1,6 @@
 module.exports = {
   OPENED: 1,
-  CLOSED: 2
+  RESERVED: 2,
+  APPROVED: 3,
+  CLOSED: 4
 };

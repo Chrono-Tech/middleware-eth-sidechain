@@ -26,13 +26,14 @@ const config = require('./config'),
   routes = require('./routes'),
   blockchainTypes = require('./factories/states/blockchainTypesFactory'),
   MainAMQPController = require('./controllers/mainAMQPController'),
+  SidechainAMQPController = require('./controllers/sidechainAMQPController'),
   bunyan = require('bunyan'),
   log = bunyan.createLogger({name: 'core.balanceProcessor', level: config.logs.level});
 
-
 mongoose.Promise = Promise;
-mongoose[blockchainTypes.main] = mongoose.createConnection(config.main.mongo.uri, {useMongoClient: true});
-mongoose[blockchainTypes.sidechain] = mongoose.createConnection(config.sidechain.mongo.uri, {useMongoClient: true});
+mongoose.set('useCreateIndex', true);
+mongoose[blockchainTypes.main] = mongoose.createConnection(config.main.mongo.uri, {useNewUrlParser: true});
+mongoose[blockchainTypes.sidechain] = mongoose.createConnection(config.sidechain.mongo.uri, {useNewUrlParser: true});
 
 
 let init = async () => {
@@ -44,12 +45,14 @@ let init = async () => {
   });
 
   const mainAMQPController = new MainAMQPController();
+  const sidechainAMQPController = new SidechainAMQPController();
 
   mainAMQPController.on('error', ()=>{
     throw new Error('rmq disconnected!');
   });
 
   await mainAMQPController.connect();
+  await sidechainAMQPController.connect();
 
 
   app.use(bodyParser.urlencoded({extended: false}));

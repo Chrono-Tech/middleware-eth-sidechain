@@ -31,8 +31,6 @@ module.exports = async (swapId, key, nonce, value, address) => {
     gasPrice: web3.utils.toHex(config.sidechain.contracts.actions.open.gasPrice)
   };
 
-  console.log()
-
   let signed = await web3.eth.accounts.signTransaction(tx, config.sidechain.web3.privateKey); //todo replace with call to sign service
 
   return {

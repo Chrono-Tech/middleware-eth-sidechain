@@ -10,6 +10,7 @@ module.exports = {
   wrongAddress: {message: 'wrong address provided', status: 301},
   wrongTxType: {message: 'wrong tx type provided', status: 302},
   txOpenExecuted: {message: 'the swap has already been opened', status: 303},
-  wrongParams: {message: 'wrong params', status: 304}
+  wrongParams: {message: 'wrong params', status: 304},
+  requestLimitReached: {message: 'request limit reached', status: 305}
 
 };
