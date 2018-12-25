@@ -1,7 +1,9 @@
 const config = require('../config'),
   amqp = require('amqplib'),
-  issueAssetSwapService = require('../services/main/rmq/issueAssetSwapService'),
-  approveTransferSwapService = require('../services/main/rmq/approveTransferSwapService'),
+  issueAssetSwapService = require('../services/sidechain/rmq/issueAssetSwapService'),
+  //approveTransferSwapService = require('../services/main/rmq/approveTransferSwapService'),
+  closeSwapService = require('../services/sidechain/rmq/closeSwapService'),
+  openSwapService = require('../services/sidechain/rmq/openSwapService'),
   EventEmitter = require('events');
 
 
@@ -26,12 +28,18 @@ class MainAMQPController extends EventEmitter {
 
     await this.channel.assertQueue(`${config.sidechain.rabbit.serviceName}.sidechain.reissueatomicswap`);
     await this.channel.assertQueue(`${config.sidechain.rabbit.serviceName}.sidechain.approval`);
+    await this.channel.assertQueue(`${config.sidechain.rabbit.serviceName}.sidechain.close`);
+    await this.channel.assertQueue(`${config.sidechain.rabbit.serviceName}.sidechain.revoke`);
 
     await this.channel.bindQueue(`${config.sidechain.rabbit.serviceName}.sidechain.reissueatomicswap`, 'events', `${config.sidechain.rabbit.serviceName}_chrono_sc.reissueatomicswap`);
     await this.channel.bindQueue(`${config.sidechain.rabbit.serviceName}.sidechain.approval`, 'events', `${config.sidechain.rabbit.serviceName}_chrono_sc.approval`);
+    await this.channel.bindQueue(`${config.sidechain.rabbit.serviceName}.sidechain.close`, 'events', `${config.sidechain.rabbit.serviceName}_chrono_sc.close`);
+    await this.channel.bindQueue(`${config.sidechain.rabbit.serviceName}.sidechain.revoke`, 'events', `${config.sidechain.rabbit.serviceName}_chrono_sc.revoke`);
 
     this.channel.consume(`${config.sidechain.rabbit.serviceName}.sidechain.reissueatomicswap`, this._onIssueAssetEvent.bind(this));
     this.channel.consume(`${config.sidechain.rabbit.serviceName}.sidechain.approval`, this._onApprovalEvent.bind(this));
+    this.channel.consume(`${config.sidechain.rabbit.serviceName}.sidechain.close`, this._onCloseEvent.bind(this));
+    this.channel.consume(`${config.sidechain.rabbit.serviceName}.sidechain.revoke`, this._onRevokeEvent.bind(this));
 
   }
 
@@ -56,7 +64,6 @@ class MainAMQPController extends EventEmitter {
 
   }
 
-
   async _onApprovalEvent (data) {
 
     let parsedData;
@@ -78,6 +85,47 @@ class MainAMQPController extends EventEmitter {
 
   } //todo implement
 
+  async _onCloseEvent (data) {
+
+    let parsedData;
+
+    try {
+      parsedData = JSON.parse(data.content.toString());
+    } catch (e) {
+      return this.channel.ack(data);
+    }
+
+    try {
+      await closeSwapService(parsedData.info.tx, parsedData.payload._swapID);
+      this.channel.ack(data);
+    } catch (e) {
+      console.log(e);
+      return this.channel.nack(data);
+    }
+
+
+  }
+
+  async _onRevokeEvent (data) {
+
+    let parsedData;
+
+    try {
+      parsedData = JSON.parse(data.content.toString());
+    } catch (e) {
+      return this.channel.ack(data);
+    }
+
+    try {
+      await openSwapService(parsedData.info.tx, parsedData.payload.symbol, parsedData.payload.by, parsedData.payload.value);
+      this.channel.ack(data);
+    } catch (e) {
+      console.log(e);
+      return this.channel.nack(data);
+    }
+
+
+  }
 
 
 }

@@ -23,7 +23,13 @@ let config = {
       serviceName: process.env.RABBIT_SERVICE_NAME || 'app_eth_mainnet'
     },
     contracts: {
-      path: process.env.SMART_CONTRACTS_PATH ? path.resolve(process.env.SMART_CONTRACTS_PATH) : path.resolve(__dirname, '../node_modules/chronobank-smart-contracts/build/contracts')
+      path: process.env.SMART_CONTRACTS_PATH ? path.resolve(process.env.SMART_CONTRACTS_PATH) : path.resolve(__dirname, '../node_modules/chronobank-smart-contracts/build/contracts'),
+      actions: {
+        unlock: {
+          gas: process.env.SMART_ACTION_UNLOCK_GAS || '650000',
+          gasPrice: process.env.SMART_ACTION_UNLOCK_GAS_PRICE || '2000000000'
+        }
+      }
     },
     web3: {
       symbol: process.env.SYMBOL || 'TIME',

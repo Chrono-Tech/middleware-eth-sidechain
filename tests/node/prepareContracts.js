@@ -52,6 +52,11 @@ const init = async () => {
     gas: gas,
     from: ownerAddress
   });
+
+
+  const mainRolesLibrary = new mainnetWeb3.eth.Contract(mainnetContracts.Roles2Library.abi, _.get(mainnetContracts.Roles2Library, `networks.${86}.address`));
+  await mainRolesLibrary.methods.addUserRole(middlewareAddress, 9).send({from: ownerAddress});
+
   //console.log(`sidechain middleware address: ${middlewareAddress}`);
   //console.log(`sidechain token: ${symbol}`);
 

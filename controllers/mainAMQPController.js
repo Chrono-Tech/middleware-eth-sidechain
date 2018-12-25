@@ -1,7 +1,6 @@
 const config = require('../config'),
   amqp = require('amqplib'),
   openSwapService = require('../services/main/rmq/openSwapService'),
-  issueAssetSwapService = require('../services/main/rmq/issueAssetSwapService'),
   EventEmitter = require('events');
 
 
