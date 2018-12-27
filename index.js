@@ -5,46 +5,70 @@
  */
 
 /**
- * Expose an express web server
- * @module middleware-custom-service
+ * Middleware service for handling user balance.
+ * Update balances for accounts, which addresses were specified
+ * in received transactions from blockParser via amqp
+ *
+ * @module Chronobank/eth-balance-processor
+ * @requires config
+ * @requires models/accountModel
  */
 
 const config = require('./config'),
   mongoose = require('mongoose'),
   Promise = require('bluebird'),
-  path = require('path'),
-  bunyan = require('bunyan'),
-  migrator = require('middleware_service.sdk').migrator,
+  models = require('./models'),
   _ = require('lodash'),
-  log = bunyan.createLogger({name: 'core.rest'}),
-  redInitter = require('middleware_service.sdk').init;
+  express = require('express'),
+  bodyParser = require('body-parser'),
+  cors = require('cors'),
+  app = express(),
+  routes = require('./routes'),
+  blockchainTypes = require('./factories/states/blockchainTypesFactory'),
+  MainAMQPController = require('./controllers/mainAMQPController'),
+  SidechainAMQPController = require('./controllers/sidechainAMQPController'),
+  bunyan = require('bunyan'),
+  log = bunyan.createLogger({name: 'core.balanceProcessor', level: config.logs.level});
 
 mongoose.Promise = Promise;
-mongoose.mainnet = mongoose.createConnection(config.main.mongo.uri);
-mongoose.sidechain = mongoose.createConnection(config.sidechain.mongo.uri);
+mongoose.set('useCreateIndex', true);
+mongoose[blockchainTypes.main] = mongoose.createConnection(config.main.mongo.uri, {useNewUrlParser: true});
+mongoose[blockchainTypes.sidechain] = mongoose.createConnection(config.sidechain.mongo.uri, {useNewUrlParser: true});
 
-[mongoose.sidechain, mongoose.mainnet].forEach(instance =>
-  instance.on('disconnected', function () {
-    log.error('mongo disconnected!');
-    process.exit(0);
-  })
-);
+//mongoose.set('debug', true); //todo remove
 
-const init = async () => {
 
-  require('require-all')({
-    dirname: path.join(__dirname, '/models'),
-    filter: /(.+Model)\.js$/
+let init = async () => {
+
+  models.init(mongoose[blockchainTypes.main], mongoose[blockchainTypes.sidechain]);
+
+  mongoose.connection.on('disconnected', () => {
+    throw new Error('mongo disconnected!');
   });
 
-  if (config.nodered.autoSyncMigrations)
-    await migrator.run(
-      config,
-      path.join(__dirname, 'migrations')
-    );
+  const mainAMQPController = new MainAMQPController();
+  const sidechainAMQPController = new SidechainAMQPController();
 
-  redInitter(config);
+  mainAMQPController.on('error', ()=>{
+    throw new Error('rmq disconnected!');
+  });
+
+  await mainAMQPController.connect();
+  await sidechainAMQPController.connect();
+
+
+  app.use(bodyParser.urlencoded({extended: false}));
+  app.use(bodyParser.json());
+
+  app.use(cors());
+  routes(app);
+
+  app.listen(config.rest.port, () => log.info(`Listening on port ${config.rest.port}!`));
+
 
 };
 
-module.exports = init();
+module.exports = init().catch(err => {
+  log.error(err);
+  process.exit(0);
+});
