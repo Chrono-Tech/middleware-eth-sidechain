@@ -10,57 +10,76 @@
  */
 require('dotenv').config();
 const path = require('path'),
-  mainConfig = require('./mainConfig'),
-  sidechainConfig = require('./sidechainConfig'),
-  web3 = require('web3'),
-  uniqid = require('uniqid'),
-  crypto = require('crypto'),
-  EthCrypto = require('eth-crypto'),
-  mongoose = require('mongoose');
+  _ = require('lodash');
 
 let config = {
-  main: mainConfig,
-  sidechain: sidechainConfig,
-  rabbit: { //todo move
-    url: process.env.RABBIT_URI || 'amqp://localhost:5672',
-    serviceName: process.env.RABBIT_SERVICE_NAME || 'app_eth'
-  },
-  rest: {
-    domain: process.env.DOMAIN || 'localhost',
-    port: parseInt(process.env.REST_PORT) || 8081
-  },
-  nodered: {
+  main: {
     mongo: {
-      uri: process.env.NODERED_MONGO_URI || process.env.MONGO_URI || 'mongodb://localhost:27017/data',
-      collectionPrefix: process.env.NODERED_MONGO_COLLECTION_PREFIX || ''
+      uri: process.env.MONGO_URI || 'mongodb://localhost:27017/data',
+      collectionPrefix: process.env.MONGO_COLLECTION_PREFIX || 'eth_mainnet'
     },
-    httpServer: parseInt(process.env.USE_HTTP_SERVER) || false,
-    httpAdminRoot: process.env.HTTP_ADMIN || false,
-    useLocalServer: true,
-    migrationsInOneFile: true,
-    useLocalStorage: true,
-    autoSyncMigrations: process.env.NODERED_AUTO_SYNC_MIGRATIONS || true,
-    customNodesDir: [path.join(__dirname, '../')],
-    migrationsDir: path.join(__dirname, '../migrations'),
-    functionGlobalContext: {
-      connections: {
-        primary: mongoose
-      },
-      libs: {
-        web3: web3,
-        uniqid: uniqid,
-        crypto: crypto,
-        EthCrypto: EthCrypto
-      },
-      settings: {
-        main: mainConfig,
-        sidechain: sidechainConfig,
-        rabbit: { //todo move
-          url: process.env.RABBIT_URI || 'amqp://localhost:5672',
-          serviceName: process.env.RABBIT_SERVICE_NAME || 'app_eth'
+    rabbit: {
+      url: process.env.RABBIT_URI || 'amqp://localhost:5672',
+      serviceName: process.env.RABBIT_SERVICE_NAME || 'app_eth_mainnet'
+    },
+    contracts: {
+      path: process.env.SMART_CONTRACTS_PATH ? path.resolve(process.env.SMART_CONTRACTS_PATH) : path.resolve(__dirname, '../node_modules/chronobank-smart-contracts/build/contracts'),
+      actions: {
+        unlock: {
+          gas: process.env.SMART_ACTION_UNLOCK_GAS || '650000',
+          gasPrice: process.env.SMART_ACTION_UNLOCK_GAS_PRICE || '2000000000'
         }
       }
+    },
+    web3: {
+      symbol: process.env.SYMBOL || 'TIME',
+      symbolAddress: process.env.SYMBOL_ADDRESS,
+      networkId: process.env.NETWORK_ID || '4',
+      privateKey: process.env.ORACLE_PRIVATE_KEY//todo remove
     }
+  },
+  sidechain: {
+    rabbit: {
+      url: process.env.SIDECHAIN_RABBIT_URI || process.env.RABBIT_URI || 'amqp://localhost:5672',
+      serviceName: process.env.SIDECHAIN_RABBIT_SERVICE_NAME || process.env.RABBIT_SERVICE_NAME || 'app_eth_sidechain'
+    },
+    mongo: {
+      uri: process.env.SIDECHAIN_MONGO_URI || process.env.MONGO_URI || 'mongodb://localhost:27017/data',
+      collectionPrefix: process.env.SIDECHAIN_MONGO_COLLECTION_PREFIX || process.env.MONGO_COLLECTION_PREFIX || 'eth_sidechain'
+    },
+    swap: {
+      expiration: process.env.SWAP_EXPIRATION ? parseInt(process.env.SWAP_EXPIRATION) : 120000,
+      requestLimit: process.env.SWAP_REQUEST_LIMIT ? parseInt(process.env.SWAP_REQUEST_LIMIT) : 3,
+    },
+    contracts: {
+      path: process.env.SMART_ATOMIC_CONTRACTS_PATH ? path.resolve(process.env.SMART_ATOMIC_CONTRACTS_PATH) : path.resolve(__dirname, '../node_modules/chronobank-smart-contracts/build/contracts'),
+      actions: {
+        open: {
+          gas: process.env.SMART_ATOMIC_ACTION_OPEN_GAS || '270000',
+          gasPrice: process.env.SMART_ATOMIC_ACTION_OPEN_GAS_PRICE || '2000000000'
+        },
+        reissueAsset: {
+          gas: process.env.SMART_ATOMIC_ACTION_REISSUE_ASSET_GAS || '110000',
+          gasPrice: process.env.SMART_ATOMIC_ACTION_REISSUE_ASSET_GAS_PRICE || '2000000000'
+        },
+        approve: {
+          gas: process.env.SMART_ATOMIC_ACTION_APPROVE_GAS || '120000', //todo count real gas
+          gasPrice: process.env.SMART_ATOMIC_ACTION_APPROVE_GAS_PRICE || '2000000000'
+        }
+      }
+    },
+    web3: {
+      symbol: process.env.SIDECHAIN_SYMBOL || 'TIME',
+      symbolAddress: process.env.SIDECHAIN_SYMBOL_ADDRESS,
+      networkId: process.env.SIDECHAIN_NETWORK_ID || '4',
+      privateKey: process.env.SIDECHAIN_ORACLE_PRIVATE_KEY //todo remove
+    }
+  },
+  rest: {
+    port: parseInt(process.env.REST_PORT) || 8081
+  },
+  logs: {
+    level: process.env.LOG_LEVEL || 'info'
   }
 };
 

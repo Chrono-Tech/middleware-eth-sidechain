@@ -13,14 +13,12 @@
 const mongoose = require('mongoose'),
   config = require('../config');
 
-require('mongoose-long')(mongoose);
-
 /**
  * Account model definition
  * @param  {Object} obj Describes account's model
  * @return {Object} Model's object
  */
-const Exchange = new mongoose.Schema({
+const Exchange = new mongoose.Schema({ //todo add request limit by operation and nonce
   key: {
     type: String,
     unique: true,
@@ -30,14 +28,27 @@ const Exchange = new mongoose.Schema({
     type: String,
     required: true
   },
-  swap_id: {
+  value: {
+    type: String,
+    required: true
+  },
+  requested: {
+    amount: {type: Number, required: true, default: 0},
+    nonce: {type: Number, required: true, default: -1}
+  },
+  swapId: {
     type: String,
     unique: true,
     required: true
   },
+  actions: [{
+    txHash: {type: String, unique: true},
+    type: {type: Number}
+  }],
   created: {type: Date, required: true, default: Date.now},
-  isActive: {type: Boolean, required: true, default: true}
+  status: {type: Number, required: true, default: 0}
 });
 
 
-module.exports = mongoose.mainnet.model(`${config.main.mongo.collectionPrefix}Exchange`, Exchange);
+module.exports = (mongooseInstance, type) =>
+  mongooseInstance.model(`${config[type].mongo.collectionPrefix}Exchange`, Exchange);
