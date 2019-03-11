@@ -23,13 +23,9 @@ let config = {
       serviceName: process.env.RABBIT_SERVICE_NAME || 'app_eth_mainnet'
     },
     contracts: {
-      path: process.env.SMART_CONTRACTS_PATH ? path.resolve(process.env.SMART_CONTRACTS_PATH) : path.resolve(__dirname, '../node_modules/chronobank-smart-contracts/build/contracts'),
-      actions: {
-        unlock: {
-          gas: process.env.SMART_ACTION_UNLOCK_GAS || '650000',
-          gasPrice: process.env.SMART_ACTION_UNLOCK_GAS_PRICE || '2000000000'
-        }
-      }
+      path: process.env.SMART_CONTRACTS_MAIN_PATH || path.join(__dirname, '../node_modules/@chronobank/smart-contracts/lib/build/contracts-minified'),
+      pathAddress: process.env.SMART_CONTRACTS_MAIN_ADDRESSES_PATH || path.join(__dirname, '../node_modules/@chronobank/smart-contracts/deployed-addresses.json'),
+      networkId: process.env.SMART_CONTRACTS_MAIN_NETWORK_ID || '4'
     },
     web3: {
       symbol: process.env.SYMBOL || 'TIME',
@@ -52,21 +48,9 @@ let config = {
       requestLimit: process.env.SWAP_REQUEST_LIMIT ? parseInt(process.env.SWAP_REQUEST_LIMIT) : 3,
     },
     contracts: {
-      path: process.env.SMART_ATOMIC_CONTRACTS_PATH ? path.resolve(process.env.SMART_ATOMIC_CONTRACTS_PATH) : path.resolve(__dirname, '../node_modules/chronobank-smart-contracts/build/contracts'),
-      actions: {
-        open: {
-          gas: process.env.SMART_ATOMIC_ACTION_OPEN_GAS || '270000',
-          gasPrice: process.env.SMART_ATOMIC_ACTION_OPEN_GAS_PRICE || '2000000000'
-        },
-        reissueAsset: {
-          gas: process.env.SMART_ATOMIC_ACTION_REISSUE_ASSET_GAS || '110000',
-          gasPrice: process.env.SMART_ATOMIC_ACTION_REISSUE_ASSET_GAS_PRICE || '2000000000'
-        },
-        approve: {
-          gas: process.env.SMART_ATOMIC_ACTION_APPROVE_GAS || '120000', //todo count real gas
-          gasPrice: process.env.SMART_ATOMIC_ACTION_APPROVE_GAS_PRICE || '2000000000'
-        }
-      }
+      path: process.env.SMART_CONTRACTS_SIDECHAIN_PATH || path.join(__dirname, '../node_modules/@chronobank/smart-contracts/lib/build/contracts-minified'),
+      pathAddress: process.env.SMART_CONTRACTS_SIDECHAIN_ADDRESSES_PATH || path.join(__dirname, '../node_modules/@chronobank/smart-contracts/deployed-addresses.json'),
+      networkId: process.env.SMART_CONTRACTS_SIDECHAIN_NETWORK_ID || '4'
     },
     web3: {
       symbol: process.env.SIDECHAIN_SYMBOL || 'TIME',

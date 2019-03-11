@@ -9,6 +9,7 @@
     "chronobank-smart-contracts": "1.1.*",
     "dotenv": "^4.0.0",
     "eth-crypto": "^1.0.0",
+    "ethereum-hdwallet": "0.0.21",
     "lodash": "^4.17.4",
     "middleware-common-components": "github:ChronoBank/middleware-common-components",
     "middleware_common_infrastructure": "github:ChronoBank/middleware-common-infrastructure.git",
